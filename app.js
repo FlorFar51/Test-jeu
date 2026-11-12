@@ -31,7 +31,7 @@ function impact(e,dmg,color='#fff',critical=false){
     }
 }
 function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,levelUpDelay:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
-function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:8,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:5,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:4,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:12,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?4:4,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
+function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:10,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:7,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:6,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:15,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?4:4,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
 function spawnEnemy(){let a=Math.random()*Math.PI*2,d=Math.max(W,H)*.62+80,e=enemyType();const elite=Math.random()<0.05;
 
 if(elite){
@@ -171,9 +171,15 @@ function kill(e,boss=false,bySword=false){
 
     if(boss)G.shake=4;
 
-    if(bySword&&Math.random()<[0,.03,.06,.10][G.up.lifeSteal]){
-        G.p.hp=Math.min(G.p.maxHp,G.p.hp+1);
+    if(G.up.lifeSteal>0 && Math.random()<[0,.04,.08,.12][G.up.lifeSteal]){
+    const oldHp=G.p.hp;
+    G.p.hp=Math.min(G.p.maxHp,G.p.hp+2);
+
+    if(G.p.hp>oldHp){
+        floatText(G.p.x,G.p.y-35,'+1 PV','#ff668b',14);
+        particle(G.p.x,G.p.y,'#ff668b',8);
     }
+}
 
     G.kills+=boss?5:1;
 
