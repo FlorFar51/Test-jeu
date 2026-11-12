@@ -30,7 +30,7 @@ function impact(e,dmg,color='#fff',critical=false){
         floatText(e.x,e.y,'CRIT !','#ffd84c',14);
     }
 }
-function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:BOSS.map(b=>({...b,homeX:b.x,homeY:b.y,maxHp:b.hp,r:27,alive:true,hitT:0,active:false,speed:52,armor:0})),joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,up,fire:false,regenT:0,gun:false,swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,up,fire:false,regenT:0,gun:false,swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:6,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:4,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:3,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:8,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?3:2,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
 function spawnEnemy(){let a=Math.random()*Math.PI*2,d=Math.max(W,H)*.62+80,e=enemyType();const elite=Math.random()<0.05;
 
@@ -44,6 +44,43 @@ if(elite){
     e.color='#ffd84c';
     e.r*=1.4;
 }G.en.push({...e,x:G.p.x+Math.cos(a)*d,y:G.p.y+Math.sin(a)*d,maxHp:e.hp,hitT:0,armor:0,atk:rnd(1,2.5),tele:0,target:null})}
+function spawnBoss(){
+    let template=BOSS[G.bossIndex%BOSS.length];
+    G.bossIndex++;
+    G.bossCount++;
+
+    let angle=Math.random()*Math.PI*2;
+    let distance=Math.max(W,H)*0.65+180;
+    let x=G.p.x+Math.cos(angle)*distance;
+    let y=G.p.y+Math.sin(angle)*distance;
+
+    let scale=1+(G.bossCount-1)*0.20;
+    let hp=Math.round(template.hp*scale);
+
+    let boss={
+        ...template,
+        x,y,
+        homeX:x,
+        homeY:y,
+        hp,
+        maxHp:hp,
+        xp:Math.round(template.xp*4*scale),
+        r:30,
+        alive:true,
+        hitT:0,
+        active:true,
+        hunting:true,
+        speed:52+G.bossCount*2,
+        armor:0,
+        attackT:2,
+        attackPattern:0
+    };
+
+    G.bosses.push(boss);
+
+    notify('ALERTE : '+boss.name+' APPROCHE !','rare');
+    particle(x,y,boss.color,30,220);
+}
 function targets(){let s=stats();return[...G.en,...G.bosses.filter(b=>b.alive)].filter(e=>dist(G.p,e)<=s.range).sort((a,b)=>dist(G.p,a)-dist(G.p,b))}
 function fire(){
     if(!G.gun)return;
@@ -111,22 +148,71 @@ function choose(k){
 }
 function kill(e,boss=false,bySword=false){
     particle(e.x,e.y,e.color||'#e54855',boss?18:8,boss?170:105);
-    G.waves.push({x:e.x,y:e.y,r:e.r||14,life:boss?.55:.22,max:boss?.55:.22,color:e.color||'#e54855'});
+
+    G.waves.push({
+        x:e.x,
+        y:e.y,
+        r:e.r||14,
+        life:boss?.55:.22,
+        max:boss?.55:.22,
+        color:e.color||'#e54855'
+    });
+
     if(boss)G.shake=4;
-    if(bySword&&Math.random()<[0,.03,.06,.10][G.up.lifeSteal])G.p.hp=Math.min(G.p.maxHp,G.p.hp+1);
-    G.kills+=boss?5:1;
-    if(boss)G.bossKills++;
-    if(boss){
-        G.coinsRun+=25;
-        notify('+25 pièces de boss','rare');
-        particle(e.x,e.y,'#ffd84c',25,220);
+
+    if(bySword&&Math.random()<[0,.03,.06,.10][G.up.lifeSteal]){
+        G.p.hp=Math.min(G.p.maxHp,G.p.hp+1);
     }
+
+    G.kills+=boss?5:1;
+
+    if(boss){
+        G.bossKills++;
+        G.coinsRun+=150;
+
+        notify('+150 PIÈCES — BOSS ÉLIMINÉ !','rare');
+
+        particle(e.x,e.y,'#ffd84c',40,260);
+        floatText(e.x,e.y-55,'+150 PIÈCES','#ffd84c',20);
+        floatText(e.x,e.y-80,'+'+e.xp+' XP','#75d7ff',18);
+    }
+
     addXP(e.xp||1);
-    G.drops.push({x:e.x,y:e.y,r:8,type:'coin',age:0,bounce:.32,v:boss?25:(e.coins||1)+Math.floor(Math.random()*2)});
-    if(!boss&&Math.random()<.03)G.drops.push({x:e.x+12,y:e.y,r:10,type:'heal',v:20});
-    if(!boss){
-        G.drops.push({x:e.x+22,y:e.y,r:11,type:'core'});
+
+    G.drops.push({
+        x:e.x,
+        y:e.y,
+        r:boss?13:8,
+        type:'coin',
+        age:0,
+        bounce:.32,
+        v:boss?100:(e.coins||1)+Math.floor(Math.random()*2)
+    });
+
+    if(!boss&&Math.random()<.03){
+        G.drops.push({
+            x:e.x+12,
+            y:e.y,
+            r:10,
+            type:'heal',
+            v:20
+        });
+    }
+
+    // Seuls les boss donnent des noyaux
+    if(boss){
+        G.drops.push({
+            x:e.x,
+            y:e.y,
+            r:13,
+            type:'core',
+            age:0,
+            bounce:.32
+        });
+
         G.coreExists=true;
+
+        notify('NOYAU DE BOSS RÉCUPÉRABLE !','rare');
     }
 }
 function swordAttack(){const u=G.up,reach=[88,105,125,150][u.sRange],damage=[3.2,4.5,6.1,8.3][u.sDamage];const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=target.maxHp>20;if(boss)target.alive=false;kill(target,boss,true)}return true}
@@ -134,7 +220,69 @@ function openMerchant(){if(!G.merchantReady||G.merchantOpen||G.paused)return;G.p
 function buy(it){if(G.coinsRun<it.cost){let m=$('#coins');m.animate([{transform:'translateX(-4px)',color:'#ff5252'},{transform:'translateX(4px)'},{transform:'none'}],{duration:220});return}G.coinsRun-=it.cost;floatText(G.p.x,G.p.y-35,it.name.toUpperCase(),'#ffd34f',16);particle(G.p.x,G.p.y,'#ffd34f',16,120);if(it.gun)G.gun=true;if(it.heal)G.p.hp=G.p.maxHp;if(it.sharp)G.up.sDamage=Math.min(3,G.up.sDamage+1);updateHUD();closeMerchant()}
 function closeMerchant(){G.merchantOpen=false;G.paused=false;$('#merchant').classList.remove('show');G.last=performance.now();raf=requestAnimationFrame(loop)}
 function rangedEnemy(e,dt){let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*dt,(G.p.y-e.y)/d*e.speed*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*dt,-(G.p.y-e.y)/d*e.speed*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
-function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,j.dx/j.mag*s.speed*dt,j.dy/j.mag*s.speed*dt,b);G.t+=dt;G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){fire();G.shot=s.rate}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
+function bossAttack(q,dt){
+    q.attackT-=dt;
+    if(q.attackT>0)return;
+
+    let p=G.p;
+    let angle=Math.atan2(p.y-q.y,p.x-q.x);
+
+    // Attaque 1 : cercle de 12 projectiles
+    if(q.attackPattern===0){
+        let count=12;
+
+        for(let i=0;i<count;i++){
+            let a=i*Math.PI*2/count;
+
+            G.enemyBul.push({
+                x:q.x,
+                y:q.y,
+                vx:Math.cos(a)*180,
+                vy:Math.sin(a)*180,
+                r:7,
+                dmg:12,
+                life:3.5,
+                color:q.color
+            });
+        }
+
+        q.attackPattern=1;
+    }
+
+    // Attaque 2 : éventail de 7 projectiles ciblant le joueur
+    else{
+        let count=7;
+
+        for(let i=0;i<count;i++){
+            let spread=(i-(count-1)/2)*0.20;
+            let a=angle+spread;
+
+            G.enemyBul.push({
+                x:q.x,
+                y:q.y,
+                vx:Math.cos(a)*270,
+                vy:Math.sin(a)*270,
+                r:6,
+                dmg:15,
+                life:3,
+                color:'#ffcf62'
+            });
+        }
+
+        q.attackPattern=0;
+    }
+
+    particle(q.x,q.y,q.color,12,120);
+    q.attackT=2.7;
+}
+function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,j.dx/j.mag*s.speed*dt,j.dy/j.mag*s.speed*dt,b);G.t+=dt;
+
+G.bossTimer-=dt;
+
+if(G.bossTimer<=0){
+    spawnBoss();
+    G.bossTimer=180;
+}G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){fire();G.shot=s.rate}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
 
     let d=dist(e,p)||1;
 
@@ -172,7 +320,28 @@ function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,
 
     contact(e,e.dmg);
 }
-}for(let q of G.bosses.filter(x=>x.alive)){q.hitT=Math.max(0,q.hitT-dt);q.flash=Math.max(0,(q.flash||0)-dt);q.squash=Math.max(0,(q.squash||0)-dt);let dp=dist(q,p);q.active=dp<310;if(q.active){let d=dp||1;move(q,(p.x-q.x)/d*q.speed*dt,(p.y-q.y)/d*q.speed*dt,b);contact(q,18)}else{let d=Math.hypot(q.homeX-q.x,q.homeY-q.y)||1;if(d>5)move(q,(q.homeX-q.x)/d*q.speed*.65*dt,(q.homeY-q.y)/d*q.speed*.65*dt,b)}}for(let q of G.bul){let dx=q.vx*dt,dy=q.vy*dt;q.x+=dx;q.y+=dy;q.travel+=Math.hypot(dx,dy);if(b.some(o=>hit(q,o)))q.travel=9999;for(let e of[...G.en,...G.bosses.filter(z=>z.alive)])if(!q.seen.has(e)&&dist(q,e)<q.r+e.r){q.seen.add(e);e.hp-=q.damage;G.damageDone+=q.damage;e.hitT=3;impact(e,q.damage,q.fire?'#ff8a3d':'#ffe56a',q.critical);q.hits--;if(q.fire)e.burn=2;if(e.hp<=0){if(e.maxHp>20){e.alive=false;kill(e,true)}else kill(e)}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}updateHUD()}
+}for(let q of G.bosses.filter(x=>x.alive)){
+    q.hitT=Math.max(0,q.hitT-dt);
+    q.flash=Math.max(0,(q.flash||0)-dt);
+    q.squash=Math.max(0,(q.squash||0)-dt);
+
+    let dp=dist(q,p);
+    q.active=q.hunting||dp<310;
+
+    if(q.active){
+        let d=dp||1;
+
+        move(
+            q,
+            (p.x-q.x)/d*q.speed*dt,
+            (p.y-q.y)/d*q.speed*dt,
+            b
+        );
+
+        contact(q,18);
+        bossAttack(q,dt);
+    }
+}for(let q of G.bul){let dx=q.vx*dt,dy=q.vy*dt;q.x+=dx;q.y+=dy;q.travel+=Math.hypot(dx,dy);if(b.some(o=>hit(q,o)))q.travel=9999;for(let e of[...G.en,...G.bosses.filter(z=>z.alive)])if(!q.seen.has(e)&&dist(q,e)<q.r+e.r){q.seen.add(e);e.hp-=q.damage;G.damageDone+=q.damage;e.hitT=3;impact(e,q.damage,q.fire?'#ff8a3d':'#ffe56a',q.critical);q.hits--;if(q.fire)e.burn=2;if(e.hp<=0){if(e.maxHp>20){e.alive=false;kill(e,true)}else kill(e)}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}updateHUD()}
 function contact(e,dmg){if(dist(e,G.p)<e.r+G.p.r&&G.inv<=0){let received=Math.max(1,Math.round(dmg*(1-stats().armor)));G.p.hp-=received;G.damageTaken+=received;G.inv=.7;if(G.p.hp<=0)end()}}
 function updateHUD(){if(!G)return;$('#hpbar').style.width=G.p.hp/G.p.maxHp*100+'%';$('#hptext').textContent=Math.ceil(G.p.hp)+'/'+G.p.maxHp;$('#xpbar').style.width=G.xp/G.xpNeed*100+'%';$('#xptext').textContent=G.xp+'/'+G.xpNeed;$('#level').textContent=G.level;$('#kills').textContent=G.kills;$('#coins').textContent=G.coinsRun;$('#cores').textContent=G.coresRun;$('#timer').textContent=Math.floor(G.t/60)+':'+String(Math.floor(G.t%60)).padStart(2,'0');let a=G.bosses.find(b=>b.alive&&b.active);$('#bossHud').style.display=a?'block':'none';if(a){$('#bossName').textContent=a.name;$('#bossLife').textContent=Math.ceil(a.hp)+'/'+a.maxHp;$('#bossbar').style.width=a.hp/a.maxHp*100+'%'}$('#notice').textContent=G.carrying?'◆ Noyau transporté — retourne au spawn':'';let mb=$('#merchantBtn'),mt=$('#merchantTimer');mb.disabled=!G.merchantReady;mb.classList.toggle('ready',G.merchantReady);mt.textContent=G.merchantReady?'PRÊT':Math.ceil(G.merchantT)+'s';let cd=Math.max(0,G.swordT),pct=G.swordMax?100*(1-cd/G.swordMax):100,sc=$('#swordCooldown');$('#swordFill').style.height=Math.max(0,Math.min(100,pct))+'%';sc.classList.toggle('ready',cd===0)}
 function edgeArrow(tx,ty,color,label){let sx=tx-G.p.x,sy=ty-G.p.y,top=G.bosses.some(b=>b.active)?150:110;if(Math.abs(sx)<W/2-35&&Math.abs(sy)<H/2-top)return;let a=Math.atan2(sy,sx),cx=W/2,cy=(H+top)/2,rx=W/2-28,ry=(H-top)/2-28,t=Math.min(rx/Math.max(.001,Math.abs(Math.cos(a))),ry/Math.max(.001,Math.abs(Math.sin(a)))),x=cx+Math.cos(a)*t,y=cy+Math.sin(a)*t;X.save();X.translate(x,y);X.rotate(a);X.fillStyle=color;X.beginPath();X.moveTo(10,0);X.lineTo(-7,-7);X.lineTo(-4,0);X.lineTo(-7,7);X.closePath();X.fill();X.rotate(-a);X.font='10px system-ui';X.textAlign='center';X.fillText(label,0,20);X.restore()}
