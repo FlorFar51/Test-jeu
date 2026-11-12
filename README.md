@@ -1,2 +1,2 @@
-# Noyau Zéro v3
-Jeu de survie 2D infini pour iPhone, avec boss fixes, indicateurs, coffres, soins et portée d'arme.
+# Noyau Zéro v8
+Animations d'attaque, impacts, dégâts flottants, particules, pièces, noyau rare, niveaux, marchand et ennemis spéciaux.
