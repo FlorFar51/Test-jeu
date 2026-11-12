@@ -1,1 +1,23 @@
-{"name":"Collecte 2D","short_name":"Collecte 2D","description":"Petit jeu 2D hors ligne","start_url":"./","scope":"./","display":"standalone","orientation":"portrait","background_color":"#07111f","theme_color":"#111827","icons":[{"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png"}]}
+{
+  "name": "Noyau Zéro",
+  "short_name": "Noyau Zéro",
+  "description": "Jeu de survie 2D infini",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07101d",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
