@@ -215,7 +215,7 @@ function kill(e,boss=false,bySword=false){
         notify('NOYAU DE BOSS RÉCUPÉRABLE !','rare');
     }
 }
-function swordAttack(){const u=G.up,reach=[88,105,125,150][u.sRange],damage=[3.2,4.5,6.1,8.3][u.sDamage];const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=G.bosses.includes(target);if(boss)target.alive=false;kill(target,boss,true)}return true}
+function swordAttack(){const u=G.up,reach=[60,70,100,125][u.sRange],damage=[2,4.5,6.8,8.5][u.sDamage];const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=G.bosses.includes(target);if(boss)target.alive=false;kill(target,boss,true)}return true}
 function openMerchant(){
     if(!G.merchantReady||G.merchantOpen||G.paused)return;
 
