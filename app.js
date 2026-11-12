@@ -23,13 +23,13 @@ function dist(a, b) {
 }
 
 function show(id){screens.forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active')}
-function resize(){
+function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const rect = C.parentElement.getBoundingClientRect();
 
-    W = Math.round(rect.width);
-    H = Math.round(rect.height);
+    W = Math.max(1, Math.round(rect.width));
+    H = Math.max(1, Math.round(rect.height));
 
     C.width = Math.round(W * dpr);
     C.height = Math.round(H * dpr);
@@ -39,17 +39,15 @@ function resize(){
 
     X.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-
 window.addEventListener('resize', resize);
+
 window.addEventListener('orientationchange', () => {
-    setTimeout(resize, 250);
+    setTimeout(resize, 300);
 });
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', resize);
 }
-
-resize();
 function blockData(cx,cy){
     let seed=((cx*73856093)^(cy*19349663)^G.mapSeed)>>>0;
 
