@@ -1,7 +1,16 @@
 const $=s=>document.querySelector(s),C=$('#c'),X=C.getContext('2d'),screens=[...document.querySelectorAll('.screen')];let W,H,dpr,G,raf;
-const CFG={spawnRate:1.3,maxEnemies:72};const BOSS=[{x:650,y:0,name:'Gardien Est',color:'#ff784d',hp:55,xp:22},{x:-620,y:-620,name:'Gardien Nord-Ouest',color:'#f04d8b',hp:80,xp:28},{x:0,y:900,name:'Colosse Sud',color:'#a96cff',hp:110,xp:35}];
+const CFG={spawnRate:1.3,maxEnemies:55};const BOSS=[{x:650,y:0,name:'Gardien Est',color:'#ff784d',hp:55,xp:22},{x:-620,y:-620,name:'Gardien Nord-Ouest',color:'#f04d8b',hp:80,xp:28},{x:0,y:900,name:'Colosse Sud',color:'#a96cff',hp:110,xp:35}];
 const SWORD_UP=[['sDamage','Pointe renforcée',['+35 % dégâts','+80 % dégâts','+140 % dégâts']],['sRange','Allonge',['85 px','100 px','120 px']],['sRate','Vitesse de pique',['+12 %','+25 %','+40 %']],['lifeSteal','Vol de vie',['3 %','6 %','10 %']]];
 const GUN_UP=[['multi','Tir multiple',['2 projectiles','3 projectiles','4 projectiles']],['damage','Puissance',['+25 % dégâts','+50 % dégâts','+80 % dégâts']],['rate','Cadence',['+15 %','+30 %','+45 %']],['range','Portée',['380 px','440 px','500 px']],['life','Vie maximale',['120 PV et +20 PV','145 PV et +20 PV','175 PV et +20 PV']],['armor','Armure',['-10 % dégâts','-20 % dégâts','-30 % dégâts']],['speed','Vitesse',['+8 %','+16 %','+25 %']],['magnet','Aimant',['120 px','170 px','230 px']],['pierce','Perforation',['1 ennemi','2 ennemis','3 ennemis']],['regen','Régénération',['1 PV / 12 s','1 PV / 8 s','1 PV / 5 s']]];
+function addXP(n){
+
+    let bonus=1;
+
+    if(G.t>300) bonus=1.2;
+    if(G.t>600) bonus=1.5;
+    if(G.t>900) bonus=2;
+
+    G.xp+=Math.round(n*bonus);
 function show(id){screens.forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active')}function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;C.width=W*dpr;C.height=H*dpr;X.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
 function blockData(cx,cy){let seed=((cx*73856093)^(cy*19349663))>>>0,r=()=>((seed=Math.imul(seed^seed>>>15,1|seed),seed^=seed+Math.imul(seed^seed>>>7,61|seed),(seed^seed>>>14)>>>0)/4294967296),a=[];if(cx||cy)for(let i=0,n=2+Math.floor(r()*4);i<n;i++){let wall=r()<.35;a.push({x:cx*700+80+r()*540,y:cy*700+80+r()*540,w:wall?25:45+r()*55,h:wall?100+r()*130:45+r()*55})}return a}function blocks(){let p=G.p,cx=Math.floor(p.x/700),cy=Math.floor(p.y/700),a=[];for(let x=cx-1;x<=cx+1;x++)for(let y=cy-1;y<=cy+1;y++){let k=x+','+y;if(!G.blocks[k])G.blocks[k]=blockData(x,y);a.push(...G.blocks[k])}return a}function hit(p,o){let x=clamp(p.x,o.x,o.x+o.w),y=clamp(p.y,o.y,o.y+o.h);return Math.hypot(p.x-x,p.y-y)<p.r}function move(o,dx,dy,b){o.x+=dx;if(b.some(q=>hit(o,q)))o.x-=dx;o.y+=dy;if(b.some(q=>hit(o,q)))o.y-=dy}
 function stats(){let u=G.up;return{speed:210*[1,1.08,1.16,1.25][u.speed],range:[330,380,440,500][u.range],damage:[1,1.25,1.5,1.8][u.damage],rate:.62/[1,1.15,1.30,1.45][u.rate],shots:1+u.multi,armor:[0,.1,.2,.3][u.armor],magnet:[85,120,170,230][u.magnet],pierce:u.pierce,regen:[0,12,8,5][u.regen]}}
