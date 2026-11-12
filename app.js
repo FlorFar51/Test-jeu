@@ -110,8 +110,8 @@ function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,
 
         if(dd<35 && dd>0){
 
-            rx+=(dx/dd)*25;
-            ry+=(dy/dd)*25;
+            rx+=(dx/dd)*40;
+            ry+=(dy/dd)*40;
         }
     }
 
