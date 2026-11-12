@@ -64,7 +64,26 @@ function move(o,dx,dy,b){
     o.x=clamp(o.x,-MAP_HALF+margin,MAP_HALF-margin);
     o.y=clamp(o.y,-MAP_HALF+margin,MAP_HALF-margin);
 }
+function blocks(){
+    let p=G.p;
+    let cx=Math.floor(p.x/700);
+    let cy=Math.floor(p.y/700);
+    let a=[];
 
+    for(let x=cx-1;x<=cx+1;x++){
+        for(let y=cy-1;y<=cy+1;y++){
+            let k=x+','+y;
+
+            if(!G.blocks[k]){
+                G.blocks[k]=blockData(x,y);
+            }
+
+            a.push(...G.blocks[k]);
+        }
+    }
+
+    return a;
+}
 function stats(){let u=G.up;return{speed:210*[1,1.08,1.16,1.25][u.speed],range:[330,380,440,500][u.range],damage:[1,1.25,1.5,1.8][u.damage],rate:.62/[1,1.15,1.30,1.45][u.rate],shots:1+u.multi,armor:[0,.1,.2,.3][u.armor],magnet:[85,120,170,230][u.magnet],pierce:u.pierce,regen:[0,12,8,5][u.regen]}}
 function particle(x,y,color,n=6,power=90){if(!G||SETTINGS.effects==='low')return;let cap=SETTINGS.eco?50:SETTINGS.effects==='high'?180:120,limit=Math.max(0,cap-G.particles.length);for(let i=0;i<Math.min(n,limit);i++){let a=Math.random()*Math.PI*2,v=rnd(power*.35,power);G.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.22,.42),max:.42,color,r:rnd(1.5,3.5)})}}function floatText(x,y,text,color='#fff',size=13){if(SETTINGS.damageText&&G&&G.texts.length<35)G.texts.push({x,y,text,color,life:.65,max:.65,size})}
 function impact(e,dmg,color='#fff',critical=false){
@@ -104,7 +123,7 @@ if(elite){
 }let x=clamp(G.p.x+Math.cos(a)*d,-MAP_HALF+e.r+20,MAP_HALF-e.r-20);
 let y=clamp(G.p.y+Math.sin(a)*d,-MAP_HALF+e.r+20,MAP_HALF-e.r-20);
 
-G.en.push({...e,x,y,maxHp:e.hp,hitT:0,armor:0,atk:rnd(1,2.5),tele:0,target:null});
+G.en.push({...e,x,y,maxHp:e.hp,hitT:0,armor:0,atk:rnd(1,2.5),tele:0,target:null});}
 function spawnBoss(){
     let template=BOSS[G.bossIndex%BOSS.length];
     G.bossIndex++;
