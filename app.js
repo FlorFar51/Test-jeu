@@ -30,7 +30,7 @@ function impact(e,dmg,color='#fff',critical=false){
         floatText(e.x,e.y,'CRIT !','#ffd84c',14);
     }
 }
-function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,up,fire:false,regenT:0,gun:false,swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:8,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:5,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:4,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:12,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?3:2,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
 function spawnEnemy(){let a=Math.random()*Math.PI*2,d=Math.max(W,H)*.62+80,e=enemyType();const elite=Math.random()<0.05;
 
@@ -103,7 +103,7 @@ function fire(){
             vx:Math.cos(a)*430,
             vy:Math.sin(a)*430,
             travel:0,
-            damage:s.damage*(critical?2:(s.shots>1?.85:1)),
+            damage:s.damage*(G.weapon==='smg'?.8:1)*(critical?2:(s.shots>1?.85:1)),
             critical:critical,
             hits:s.pierce+1,
             seen:new Set(),
@@ -216,8 +216,126 @@ function kill(e,boss=false,bySword=false){
     }
 }
 function swordAttack(){const u=G.up,reach=[88,105,125,150][u.sRange],damage=[3.2,4.5,6.1,8.3][u.sDamage];const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=target.maxHp>20;if(boss)target.alive=false;kill(target,boss,true)}return true}
-function openMerchant(){if(!G.merchantReady||G.merchantOpen||G.paused)return;G.paused=true;G.merchantOpen=true;joyEnd();cancelAnimationFrame(raf);let box=$('#shop');box.innerHTML='';let items=[];if(!G.gun)items.push({name:'Pistolet',desc:'Débloque le tir à distance et ses améliorations.',cost:80,gun:true,icon:'🔫',color:'#ffd45f'});items.push({name:'Soin complet',desc:'Restaure tous les PV.',cost:35,heal:true,icon:'✚',color:'#62e795'});items.push({name:'Affûtage',desc:'+15 % dégâts à l’épée pour cette partie.',cost:45,sharp:true,icon:'⚔',color:'#7fd8ff'});for(let it of items){let b=document.createElement('button');b.className='choice '+(it.gun?'gun':'sword');b.disabled=G.coinsRun<it.cost;b.style.setProperty('--accent',it.color||'#f1cb54');b.innerHTML=`<span class="cardIcon">${it.icon||'✦'}</span><span class="cardBody"><strong>${it.name}</strong><small>${it.desc}</small><em>${it.cost} 🪙</em></span><span class="buyArrow">›</span>`;b.onclick=()=>buy(it);box.appendChild(b)}$('#merchant').classList.add('show')}
-function buy(it){if(G.coinsRun<it.cost){let m=$('#coins');m.animate([{transform:'translateX(-4px)',color:'#ff5252'},{transform:'translateX(4px)'},{transform:'none'}],{duration:220});return}G.coinsRun-=it.cost;floatText(G.p.x,G.p.y-35,it.name.toUpperCase(),'#ffd34f',16);particle(G.p.x,G.p.y,'#ffd34f',16,120);if(it.gun)G.gun=true;if(it.heal)G.p.hp=G.p.maxHp;if(it.sharp)G.up.sDamage=Math.min(3,G.up.sDamage+1);updateHUD();closeMerchant()}
+function openMerchant(){
+    if(!G.merchantReady||G.merchantOpen||G.paused)return;
+
+    G.paused=true;
+    G.merchantOpen=true;
+    joyEnd();
+    cancelAnimationFrame(raf);
+
+    let box=$('#shop');
+    box.innerHTML='';
+
+    let items=[];
+
+    if(!G.gun){
+        items.push({
+            name:'Pistolet',
+            desc:'Débloque le tir à distance.',
+            cost:80,
+            gun:true,
+            icon:'🔫',
+            color:'#ffd45f'
+        });
+    }
+
+    if(G.gun&&!G.smg){
+        items.push({
+            name:'Mitraillette',
+            desc:'Cadence de tir très élevée. Arme automatique améliorée.',
+            cost:250,
+            smg:true,
+            icon:'🔫',
+            color:'#ff785e'
+        });
+    }
+
+    items.push({
+        name:'Soin complet',
+        desc:'Restaure tous les PV.',
+        cost:35,
+        heal:true,
+        icon:'✚',
+        color:'#62e795'
+    });
+
+    items.push({
+        name:'Affûtage',
+        desc:'+15 % dégâts à l’épée pour cette partie.',
+        cost:45,
+        sharp:true,
+        icon:'⚔',
+        color:'#7fd8ff'
+    });
+
+    for(let it of items){
+        let b=document.createElement('button');
+
+        b.className='choice '+(it.gun?'gun':'sword');
+        b.disabled=G.coinsRun<it.cost;
+        b.style.setProperty('--accent',it.color||'#f1cb54');
+
+        b.innerHTML=`
+            <span class="cardIcon">${it.icon||'✦'}</span>
+            <span class="cardBody">
+                <strong>${it.name}</strong>
+                <small>${it.desc}</small>
+                <em>${it.cost} 🪙</em>
+            </span>
+            <span class="buyArrow">›</span>
+        `;
+
+        b.onclick=()=>buy(it);
+        box.appendChild(b);
+    }
+
+    $('#merchant').classList.add('show');
+}
+function buy(it){
+    if(G.coinsRun<it.cost){
+        let m=$('#coins');
+        m.animate([
+            {transform:'translateX(-4px)',color:'#ff5252'},
+            {transform:'translateX(4px)'},
+            {transform:'none'}
+        ],{duration:220});
+        return;
+    }
+
+    G.coinsRun-=it.cost;
+
+    floatText(
+        G.p.x,
+        G.p.y-35,
+        it.name.toUpperCase(),
+        '#ffd34f',
+        16
+    );
+
+    particle(G.p.x,G.p.y,'#ffd34f',16,120);
+
+    if(it.gun){
+        G.gun=true;
+        G.weapon='pistol';
+        notify('PISTOLET DÉBLOQUÉ !','rare');
+    }
+
+    if(it.smg){
+        G.smg=true;
+        G.weapon='smg';
+        notify('MITRAILLETTE DÉBLOQUÉE !','rare');
+    }
+
+    if(it.heal)G.p.hp=G.p.maxHp;
+
+    if(it.sharp){
+        G.up.sDamage=Math.min(3,G.up.sDamage+1);
+    }
+
+    updateHUD();
+    closeMerchant();
+}
 function closeMerchant(){G.merchantOpen=false;G.paused=false;$('#merchant').classList.remove('show');G.last=performance.now();raf=requestAnimationFrame(loop)}
 function rangedEnemy(e,dt){let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*dt,(G.p.y-e.y)/d*e.speed*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*dt,-(G.p.y-e.y)/d*e.speed*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
 function bossAttack(q,dt){
@@ -282,7 +400,10 @@ G.bossTimer-=dt;
 if(G.bossTimer<=0){
     spawnBoss();
     G.bossTimer=180;
-}G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){fire();G.shot=s.rate}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
+}G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){
+    fire();
+    G.shot=s.rate*(G.weapon==='smg'?.36:1);
+}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
 
     let d=dist(e,p)||1;
 
