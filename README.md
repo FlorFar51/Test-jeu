@@ -1,2 +1,2 @@
-# Noyau Zéro v10
-Recharge de la pique augmentée à 1,25 seconde. Les améliorations la réduisent progressivement jusqu’à environ 0,83 seconde.
+# Noyau Zéro v11
+Cooldown uniquement après impact confirmé; arme prête sans cible; icônes replacées dans la zone sûre iPhone.
