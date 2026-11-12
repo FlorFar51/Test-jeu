@@ -92,7 +92,44 @@ function openMerchant(){if(!G.merchantReady||G.merchantOpen||G.paused)return;G.p
 function buy(it){if(G.coinsRun<it.cost){let m=$('#coins');m.animate([{transform:'translateX(-4px)',color:'#ff5252'},{transform:'translateX(4px)'},{transform:'none'}],{duration:220});return}G.coinsRun-=it.cost;floatText(G.p.x,G.p.y-35,it.name.toUpperCase(),'#ffd34f',16);particle(G.p.x,G.p.y,'#ffd34f',16,120);if(it.gun)G.gun=true;if(it.heal)G.p.hp=G.p.maxHp;if(it.sharp)G.up.sDamage=Math.min(3,G.up.sDamage+1);updateHUD();closeMerchant()}
 function closeMerchant(){G.merchantOpen=false;G.paused=false;$('#merchant').classList.remove('show');G.last=performance.now();raf=requestAnimationFrame(loop)}
 function rangedEnemy(e,dt){let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*dt,(G.p.y-e.y)/d*e.speed*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*dt,-(G.p.y-e.y)/d*e.speed*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
-function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,j.dx/j.mag*s.speed*dt,j.dy/j.mag*s.speed*dt,b);G.t+=dt;G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){fire();G.shot=s.rate}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(.38,CFG.spawnRate-G.t/210)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{let d=dist(e,p)||1;function addXP(n){
+function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,j.dx/j.mag*s.speed*dt,j.dy/j.mag*s.speed*dt,b);G.t+=dt;G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){fire();G.shot=s.rate}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(.38,CFG.spawnRate-G.t/210)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
+
+    let d=dist(e,p)||1;
+
+    let rx=0;
+    let ry=0;
+
+    for(const other of G.en){
+
+        if(other===e) continue;
+
+        const dx=e.x-other.x;
+        const dy=e.y-other.y;
+
+        const dd=Math.hypot(dx,dy);
+
+        if(dd<35 && dd>0){
+
+            rx+=(dx/dd)*25;
+            ry+=(dy/dd)*25;
+        }
+    }
+
+    move(
+        e,
+        (
+            (p.x-e.x)/d*e.speed
+            + rx
+        )*dt,
+        (
+            (p.y-e.y)/d*e.speed
+            + ry
+        )*dt,
+        b
+    );
+
+    contact(e,e.dmg);
+}function addXP(n){
 
     let bonus=1;
 
