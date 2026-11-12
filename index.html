@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Collecte 2D">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./style.css">
+  <title>Collecte 2D</title>
+</head>
+<body>
+  <main id="app">
+    <section id="start" class="screen active">
+      <div class="panel">
+        <div class="logo">◆</div>
+        <h1>Collecte 2D</h1>
+        <p>Ramasse les 10 cristaux le plus vite possible.</p>
+        <button id="playBtn">Jouer</button>
+        <p class="small">Déplacement : boutons tactiles ou flèches du clavier.</p>
+      </div>
+    </section>
+
+    <section id="game" class="screen">
+      <header>
+        <strong>Cristaux : <span id="score">0</span>/10</strong>
+        <span>Temps : <span id="time">0.0</span>s</span>
+        <button id="menuBtn" class="smallBtn">Menu</button>
+      </header>
+      <canvas id="canvas" width="360" height="540" aria-label="Zone de jeu"></canvas>
+      <div class="controls" aria-label="Commandes tactiles">
+        <button data-dir="up">▲</button>
+        <div><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button></div>
+      </div>
+    </section>
+
+    <section id="win" class="screen">
+      <div class="panel">
+        <h2>Bravo !</h2>
+        <p>Tu as ramassé tous les cristaux en <strong><span id="finalTime">0</span>s</strong>.</p>
+        <p>Meilleur temps : <strong><span id="bestTime">--</span></strong></p>
+        <button id="replayBtn">Rejouer</button>
+        <button id="homeBtn" class="secondary">Accueil</button>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
