@@ -1,2 +1,2 @@
-# Noyau Zéro v8
-Animations d'attaque, impacts, dégâts flottants, particules, pièces, noyau rare, niveaux, marchand et ennemis spéciaux.
+# Noyau Zéro v10
+Recharge de la pique augmentée à 1,25 seconde. Les améliorations la réduisent progressivement jusqu’à environ 0,83 seconde.
