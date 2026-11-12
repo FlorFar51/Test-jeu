@@ -1,2 +1,2 @@
-# Noyau Zéro v4
-Ajout des niveaux, XP automatique, choix d'améliorations, tir enflammé et ennemis évolutifs.
+# Noyau Zéro v5
+Épée de départ, marchand et pistolet achetable, ennemis tireurs, lanciers et bombardiers.
