@@ -13,6 +13,9 @@ function rnd(min, max) {
     }
     return Math.random() * (max - min) + min;
 }
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
 function show(id){screens.forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active')}
 function resize(){
     dpr = Math.min(window.devicePixelRatio || 1, 2);
