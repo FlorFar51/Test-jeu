@@ -30,7 +30,7 @@ function impact(e,dmg,color='#fff',critical=false){
         floatText(e.x,e.y,'CRIT !','#ffd84c',14);
     }
 }
-function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,levelUpDelay:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();show('game');cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:8,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:5,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:4,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:12,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?4:4,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
 function spawnEnemy(){let a=Math.random()*Math.PI*2,d=Math.max(W,H)*.62+80,e=enemyType();const elite=Math.random()<0.05;
 
@@ -112,14 +112,25 @@ function fire(){
     }
 }
 function addXP(n){
-
     let bonus=1;
 
     if(G.t>300) bonus=1.2;
     if(G.t>600) bonus=1.5;
     if(G.t>900) bonus=2;
 
-    G.xp+=Math.round(n*bonus);while(G.xp>=G.xpNeed&&G.level<25){G.xp-=G.xpNeed;G.level++;G.xpNeed=Math.ceil(G.xpNeed*1.2+2);G.pending++}if(G.pending&&!G.paused)openLevel()}
+    G.xp+=Math.round(n*bonus);
+
+    while(G.xp>=G.xpNeed&&G.level<25){
+        G.xp-=G.xpNeed;
+        G.level++;
+        G.xpNeed=Math.ceil(G.xpNeed*1.2+2);
+        G.pending++;
+    }
+
+    if(G.pending&&!G.paused&&G.levelUpDelay<=0){
+        G.levelUpDelay=.5;
+    }
+}
 function openLevel(){G.waves.push({x:G.p.x,y:G.p.y,r:15,life:.6,max:.6,color:'#55b9ff'});G.levelFlash=.45;particle(G.p.x,G.p.y,'#55b9ff',18,150);G.paused=true;cancelAnimationFrame(raf);joyEnd();let pool=[...SWORD_UP,...GUN_UP.filter(x=>G.gun||['life','armor','speed','magnet','regen'].includes(x[0]))].filter(x=>G.up[x[0]]<3),chosen=[];while(pool.length&&chosen.length<3){let i=Math.floor(Math.random()*pool.length);chosen.push(pool.splice(i,1)[0])}if(G.gun&&!G.fire&&G.up.multi>0)chosen[Math.floor(Math.random()*chosen.length)]=['fire','Tir enflammé',['Brûlure pendant 2 s']];let box=$('#choices');box.innerHTML='';for(let u of chosen){let fire=u[0]==='fire',lv=fire?0:G.up[u[0]],btn=document.createElement('button');btn.className='choice'+(fire?' fire':'');let cost=40,ok=!fire||G.coinsRun>=cost;btn.disabled=!ok;let key=u[0],ico=ICONS[key]||'✦',color=COLORS[key]||'#65d8ff';btn.style.setProperty('--accent',color);btn.innerHTML=`<span class="cardIcon">${ico}</span><span class="cardBody"><strong>${u[1]}${fire?'':` ${lv+1}/3`}</strong><small>${u[2][fire?0:lv]}${fire?` — ${cost} 🪙`:''}</small></span><span class="cardLevel">${fire?'◆':(lv+1)+'/3'}</span>`;btn.onclick=()=>choose(u[0]);box.appendChild(btn)}$('#levelup').classList.add('show')}
 function choose(k){
     G.waves.push({x:G.p.x,y:G.p.y,r:20,life:.75,max:.75,color:'#75e4ff'});
@@ -469,7 +480,17 @@ if(G.bossTimer<=0){
     }else{
         kill(e);
     }
-}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}updateHUD()}
+}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}if(G.pending>0&&!G.paused){
+    G.levelUpDelay-=dt;
+
+    if(G.levelUpDelay<=0){
+        G.levelUpDelay=0;
+        openLevel();
+        return;
+    }
+}
+
+updateHUD()}
 function contact(e,dmg){if(dist(e,G.p)<e.r+G.p.r&&G.inv<=0){let received=Math.max(1,Math.round(dmg*(1-stats().armor)));G.p.hp-=received;G.damageTaken+=received;G.inv=.7;if(G.p.hp<=0)end()}}
 function updateHUD(){if(!G)return;$('#hpbar').style.width=G.p.hp/G.p.maxHp*100+'%';$('#hptext').textContent=Math.ceil(G.p.hp)+'/'+G.p.maxHp;$('#xpbar').style.width=G.xp/G.xpNeed*100+'%';$('#xptext').textContent=G.xp+'/'+G.xpNeed;$('#level').textContent=G.level;$('#kills').textContent=G.kills;$('#coins').textContent=G.coinsRun;$('#cores').textContent=G.coresRun;$('#timer').textContent=Math.floor(G.t/60)+':'+String(Math.floor(G.t%60)).padStart(2,'0');let a=G.bosses.find(b=>b.alive&&b.active);$('#bossHud').style.display=a?'block':'none';if(a){$('#bossName').textContent=a.name;$('#bossLife').textContent=Math.ceil(a.hp)+'/'+a.maxHp;$('#bossbar').style.width=a.hp/a.maxHp*100+'%'}$('#notice').textContent=G.carrying?'◆ Noyau transporté — retourne au spawn':'';let mb=$('#merchantBtn'),mt=$('#merchantTimer');mb.disabled=!G.merchantReady;mb.classList.toggle('ready',G.merchantReady);mt.textContent=G.merchantReady?'PRÊT':Math.ceil(G.merchantT)+'s';let cd=Math.max(0,G.swordT),pct=G.swordMax?100*(1-cd/G.swordMax):100,sc=$('#swordCooldown');$('#swordFill').style.height=Math.max(0,Math.min(100,pct))+'%';sc.classList.toggle('ready',cd===0)}
 function edgeArrow(tx,ty,color,label){let sx=tx-G.p.x,sy=ty-G.p.y,top=G.bosses.some(b=>b.active)?150:110;if(Math.abs(sx)<W/2-35&&Math.abs(sy)<H/2-top)return;let a=Math.atan2(sy,sx),cx=W/2,cy=(H+top)/2,rx=W/2-28,ry=(H-top)/2-28,t=Math.min(rx/Math.max(.001,Math.abs(Math.cos(a))),ry/Math.max(.001,Math.abs(Math.sin(a)))),x=cx+Math.cos(a)*t,y=cy+Math.sin(a)*t;X.save();X.translate(x,y);X.rotate(a);X.fillStyle=color;X.beginPath();X.moveTo(10,0);X.lineTo(-7,-7);X.lineTo(-4,0);X.lineTo(-7,7);X.closePath();X.fill();X.rotate(-a);X.font='10px system-ui';X.textAlign='center';X.fillText(label,0,20);X.restore()}
