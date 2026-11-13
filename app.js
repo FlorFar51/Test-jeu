@@ -23,7 +23,7 @@ const BLOCK_COLORS = {
 };
 const MAP_SIZE=10000;
 const MAP_HALF=MAP_SIZE/2;
-const SWORD_UP=[['sDamage','Impact',['+50 % dégâts','+100 % dégâts','+175 % dégâts']],['sRange','Zone de frappe',['110 px','140 px','175 px']],['sRate','Recharge',['-12 % délai','-23 % délai','-33 % délai']],['lifeSteal','Vampirisme',['5 %','10 %','15 %']]];
+const SWORD_UP=[['sDamage','Impact',['+50 % dégâts','+100 % dégâts','+175 % dégâts']],['sRange','Zone de frappe',['70 px','100 px','125 px']],['sRate','Recharge',['-12 % délai','-24 % délai','-36 % délai']],['lifeSteal','Vampirisme',['5 %','10 %','15 %']]];
 const GUN_UP=[['multi','Tir multiple',['2 projectiles','3 projectiles','4 projectiles']],['damage','Puissance',['+20 % dégâts','+40 % dégâts','+65 % dégâts']],['rate','Cadence',['+12 %','+25 %','+40 %']],['range','Portée',['380 px','440 px','500 px']],['life','Vie maximale',['120 PV et +20 PV','145 PV et +20 PV','175 PV et +20 PV']],['armor','Armure',['-8 % dégâts','-16 % dégâts','-25 % dégâts']],['speed','Vitesse',['+8 %','+15 %','+23 %']],['magnet','Aimant',['120 px','170 px','230 px']],['pierce','Perforation',['1 ennemi','2 ennemis','3 ennemis']],['regen','Régénération',['1 PV / 10 s','1 PV / 7 s','1 PV / 4 s']]];
 const ICONS={sDamage:'⚔',sRange:'↗',sRate:'⏱',lifeSteal:'♥',multi:'⑂',damage:'💥',rate:'⚡',range:'◎',life:'✚',armor:'⬡',speed:'➤',magnet:'🧲',pierce:'➶',regen:'♻',fire:'🔥',chain:'ϟ',slow:'◉',shield:'⬡',fury:'✹',magnetSupreme:'🧲',divineRegen:'✚',storm:'ϟ',overdrive:'⚡'};
 const COLORS={sDamage:'#ff7b63',sRange:'#79d7ff',sRate:'#ffd45f',lifeSteal:'#ff668b',multi:'#ffe475',damage:'#ff695e',rate:'#63dbff',range:'#70b9ff',life:'#66e28b',armor:'#9fb7d8',speed:'#70e5ca',magnet:'#c18cff',pierce:'#e2e8ff',regen:'#5de19b',fire:'#ff8a36',chain:'#67d9ff',slow:'#a78bfa',shield:'#7de0ff',fury:'#ff8066',magnetSupreme:'#d5a0ff',divineRegen:'#68e6a5',storm:'#f4d35e',overdrive:'#ff9b58'};
@@ -1032,7 +1032,7 @@ function kill(e,boss=false,bySword=false){
 
     if(boss)G.shake=4;
 
-    if(G.up.lifeSteal>0 && Math.random()<[0,.04,.08,.12][G.up.lifeSteal]){
+    if(G.up.lifeSteal>0 && Math.random()<[0,.05,.10,.15][G.up.lifeSteal]){
     const oldHp=G.p.hp;
     G.p.hp=Math.min(G.p.maxHp,G.p.hp+2);
 
@@ -1093,7 +1093,7 @@ function kill(e,boss=false,bySword=false){
         notify('NOYAU DE BOSS RÉCUPÉRABLE !','rare');
     }
 }
-function swordAttack(){const u=G.up,reach=[60,70,100,125][u.sRange],damage=[2,4.5,6.8,8.5][u.sDamage];const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=G.bosses.includes(target);if(boss)target.alive=false;kill(target,boss,true)}return true}
+function swordAttack(){const u=G.up,reach=[60,70,100,125][u.sRange],damage=[2,3,4,5.5][u.sDamage]*(G.legendary?.fury?1.4:1);const candidates=[...G.en.filter(e=>e.hp>0),...G.bosses.filter(b=>b.alive&&b.hp>0)];let target=null,best=Infinity;for(const e of candidates){const gap=Math.max(0,dist(G.p,e)-G.p.r-e.r);if(gap<=reach&&gap<best){best=gap;target=e}}if(!target)return false;const a=Math.atan2(target.y-G.p.y,target.x-G.p.x);G.slashes.push({a,life:.26,max:.26,range:reach+G.p.r,target});target.hp-=damage;G.damageDone+=damage;target.hitT=3;impact(target,damage,'#d9f2ff');G.shake=Math.max(G.shake,2);if(target.hp<=0){const boss=G.bosses.includes(target);if(boss)target.alive=false;kill(target,boss,true)}return true}
 function openMerchant(){
     if(!G.merchantReady||G.merchantOpen||G.paused)return;
 
@@ -1217,7 +1217,7 @@ function buy(it){
     closeMerchant();
 }
 function closeMerchant(){G.merchantOpen=false;G.paused=false;$('#merchant').classList.remove('show');G.last=performance.now();raf=requestAnimationFrame(loop)}
-function rangedEnemy(e,dt){let slow=G.legendary?.slow?.75:1;let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*slow*dt,(G.p.y-e.y)/d*e.speed*slow*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*dt,-(G.p.y-e.y)/d*e.speed*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
+function rangedEnemy(e,dt){let slow=G.legendary?.slow?.75:1;let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*slow*dt,(G.p.y-e.y)/d*e.speed*slow*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*slow*dt,-(G.p.y-e.y)/d*e.speed*slow*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
 
 function separateEnemies(obstacles) {
     const enemies = G.en;
