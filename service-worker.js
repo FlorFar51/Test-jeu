@@ -1,4 +1,4 @@
-const CACHE = 'noyau-zero-v19';
+const CACHE = 'noyau-zero-v20';
 
 const FILES = [
   './',
