@@ -254,11 +254,12 @@ function drawBiomeGround(p) {
     const top = Math.max(-MAP_HALF, Math.floor((p.y-H/2)/size)*size);
     const bottom = Math.min(MAP_HALF, p.y+H/2+size);
 
+    // BOUCLE À REMPLACER
     for(let x=left;x<right;x+=size){
         for(let y=top;y<bottom;y+=size){
             const biome=getBiome(x+size/2,y+size/2);
 
-            X.fillStyle=BIOME_COLORS[biome];
+            X.fillStyle = BIOME_COLORS[biome]?.ground || '#0d1b2c';
             X.fillRect(x,y,size+1,size+1);
         }
     }
@@ -1280,7 +1281,6 @@ if(G.bossTimer<=0){
             ry+=(dy/dd)*40;
         }
     }
-
     move(
         e,
         (
@@ -1293,7 +1293,6 @@ if(G.bossTimer<=0){
         )*dt,
         b
     );
-
     contact(e,e.dmg);
 }
 }for(let q of G.bosses.filter(x=>x.alive)){
@@ -1306,14 +1305,12 @@ if(G.bossTimer<=0){
 
     if(q.active){
         let d=dp||1;
-
         move(
             q,
             (p.x-q.x)/d*q.speed*dt,
             (p.y-q.y)/d*q.speed*dt,
             b
         );
-
         contact(q,18);
         bossAttack(q,dt);
     }
@@ -1333,7 +1330,6 @@ if(G.bossTimer<=0){
         return;
     }
 }
-
 updateHUD()}
 function contact(e,dmg){if(dist(e,G.p)<e.r+G.p.r&&G.inv<=0){let received=Math.max(1,Math.round(dmg*(1-stats().armor)));G.p.hp-=received;G.damageTaken+=received;G.inv=.7;if(G.p.hp<=0)end()}}
 function updateHUD(){if(!G)return;$('#hpbar').style.width=G.p.hp/G.p.maxHp*100+'%';$('#hptext').textContent=Math.ceil(G.p.hp)+'/'+G.p.maxHp;$('#xpbar').style.width=G.xp/G.xpNeed*100+'%';$('#xptext').textContent=G.xp+'/'+G.xpNeed;$('#level').textContent=G.level;$('#kills').textContent=G.kills;$('#coins').textContent=G.coinsRun;$('#cores').textContent=G.coresRun;$('#timer').textContent=Math.floor(G.t/60)+':'+String(Math.floor(G.t%60)).padStart(2,'0');let a=G.bosses.find(b=>b.alive&&b.active);$('#bossHud').style.display=a?'block':'none';if(a){$('#bossName').textContent=a.name;$('#bossLife').textContent=Math.ceil(a.hp)+'/'+a.maxHp;$('#bossbar').style.width=a.hp/a.maxHp*100+'%'}$('#notice').textContent=G.carrying?'◆ Noyau transporté — retourne au spawn':'';let mb=$('#merchantBtn'),mt=$('#merchantTimer');mb.disabled=!G.merchantReady;mb.classList.toggle('ready',G.merchantReady);mt.textContent=G.merchantReady?'PRÊT':Math.ceil(G.merchantT)+'s';let cd=Math.max(0,G.swordT),pct=G.swordMax?100*(1-cd/G.swordMax):100,sc=$('#swordCooldown');$('#swordFill').style.height=Math.max(0,Math.min(100,pct))+'%';sc.classList.toggle('ready',cd===0)}
@@ -1349,17 +1345,14 @@ function enemyShape(e){X.save();X.translate(e.x,e.y);let sq=e.squash>0?1.22:1;X.
     X.beginPath();
     X.arc(0,0,e.r+4,0,Math.PI*2);
     X.stroke();
-
     // Yeux rouges
     X.shadowColor='#ff174f';
     X.shadowBlur=10;
     X.fillStyle='#ff174f';
-
     X.beginPath();
     X.arc(-6,-3,3,0,Math.PI*2);
     X.arc(6,-3,3,0,Math.PI*2);
     X.fill();
-
     X.shadowBlur=0;
 }X.restore();hpbar(e)}
 function draw(){X.clearRect(0,0,W,H);let p=G.p,sx=SETTINGS.shake&&G.shake?rnd(-G.shake,G.shake):0,sy=SETTINGS.shake&&G.shake?rnd(-G.shake,G.shake):0,ox=W/2-p.x+sx,oy=H/2-p.y+sy;X.save();X.translate(ox,oy);// Limites du monde
@@ -1382,10 +1375,8 @@ X.strokeStyle='#48e7ff';
 for (let o of blocks()) {
     let biome = getBiome(o.x + o.w / 2, o.y + o.h / 2);
     let colors = BLOCK_COLORS[biome] || BLOCK_COLORS.default;
-
     X.fillStyle = o.w < 35 ? colors[0] : colors[1];
     X.fillRect(o.x, o.y, o.w, o.h);
-
     // Petit relief
     X.fillStyle = colors[0];
     X.fillRect(o.x, o.y, o.w, 5);
