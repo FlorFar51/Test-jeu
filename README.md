@@ -1,4 +1,4 @@
-# Noyau Zéro — Version 18
+# Noyau Zéro — Version 19
 
 Jeu de survie et d'action développé en JavaScript avec Canvas, jouable sur ordinateur et mobile.
 
@@ -8,7 +8,7 @@ Jeu de survie et d'action développé en JavaScript avec Canvas, jouable sur ord
 - Progression par expérience et améliorations à chaque niveau.
 - Épée automatique : dégâts, portée, recharge et vampirisme améliorables.
 - Marchand pendant la partie :
-  - Pistolet : 80 pièces d'or.
+  - Pistolet : 60 pièces d'or.
   - Transformation en mitraillette : 300 pièces.
   - Améliorations supplémentaires de mitraillette : 450, 650 et 900 pièces.
   - Soin complet : 45 pièces, achetable sans limite.
