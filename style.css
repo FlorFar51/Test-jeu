@@ -38,3 +38,10 @@ html, body {
     height: 100%;
     touch-action: none;
 }
+
+/* Pause accessible depuis le HUD et inventaire détaillé */
+#hud .stats button{pointer-events:auto;min-width:30px;height:25px;padding:1px 9px;margin-left:4px;font-size:15px;line-height:1}
+#hud .stats #pauseBtn{background:#24547b;border:1px solid #69cfff}
+#pauseBuild{justify-content:center;max-height:42dvh;overflow:auto}
+#pauseBuild span{display:inline-flex;align-items:center;gap:4px}
+#pauseBuild .pauseSection{flex:0 0 100%;margin:8px 0 2px;text-align:left;color:#6edbff;font-size:11px;letter-spacing:1px}
