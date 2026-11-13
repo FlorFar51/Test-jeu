@@ -1,33 +1,28 @@
-# Noyau Zéro — Version 19
+# Noyau Zéro — Version 20
 
-Jeu de survie et d'action développé en JavaScript avec Canvas, jouable sur ordinateur et mobile.
+Jeu de survie et d'action en JavaScript Canvas, jouable sur ordinateur et mobile.
 
 ## Fonctionnalités
-- Grande carte explorable composée de plusieurs biomes.
-- Vagues d'ennemis, ennemis élites, boss et ruines spécifiques.
-- Progression par expérience et améliorations à chaque niveau.
-- Épée automatique : dégâts, portée, recharge et vampirisme améliorables.
-- Marchand pendant la partie :
-  - Pistolet : 60 pièces d'or.
-  - Transformation en mitraillette : 300 pièces.
-  - Améliorations supplémentaires de mitraillette : 450, 650 et 900 pièces.
-  - Soin complet : 45 pièces, achetable sans limite.
-  - Trois améliorations payantes de l'épée : 100, 180 et 280 pièces.
-- Coffres apparaissant régulièrement sur la carte :
-  - Or : 60 à 120 pièces.
-  - Expérience : 25 à 40 XP.
-  - Diamant très rare : 3 % de chance, utilisable pour débloquer des atouts légendaires.
-- Noyaux de boss, atouts légendaires, records et statistiques.
-- Commandes adaptées au clavier/souris et aux écrans tactiles.
-- Paramètres visuels et mode économie d'énergie.
+- Carte explorable, plusieurs biomes, ruines et boss.
+- Ennemis évolutifs : chasers rouges, tireurs, lanciers, tanks, brutes et bombes.
+- Après 7 minutes, une fois tous les types débloqués : 55 % chasers, 8 % tireurs, 15 % lanciers, 10 % tanks, 10 % brutes et 2 % bombes (maximum deux bombes simultanées).
+- Élites jaunes rares.
+- Progression XP et améliorations de niveau.
+- Épée automatique et améliorations.
+- Marchand : pistolet 60 pièces, mitraillette 300 puis niveaux 450/650/900, soins illimités à 45 pièces, améliorations d'épée à 100/180/280.
+- Coffres : or, XP ou diamant rare.
+- Atouts légendaires achetables avec des diamants, avec effets visuels renforcés.
+- Coups critiques avec flash, particules, texte doré et onde d'impact.
+- Bouton développeur en jeu : ajoute exactement un niveau et ouvre immédiatement le choix d'amélioration suivant.
+- Commandes tactiles et clavier/souris, paramètres visuels et mode économie d'énergie.
 
 ## Jouer
 Ouvrir GitHub Pages dans un navigateur moderne. Sur mobile, le mode paysage est recommandé.
 
 ## Fichiers
-- `index.html` : structure et interface.
-- `style.css` : apparence et adaptation mobile.
+- `index.html` : interface.
+- `style.css` : styles et adaptation mobile.
 - `app.js` : logique du jeu.
-- `service-worker.js` : cache hors ligne et mises à jour.
+- `service-worker.js` : cache hors ligne.
 
-Les pièces et diamants sont conservés localement dans le navigateur via `localStorage`.
+Les données locales sont stockées dans `localStorage`.
