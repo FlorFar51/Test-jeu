@@ -1,4 +1,4 @@
-# Noyau Zéro — Version 21
+# Noyau Zéro — Version 22
 
 Jeu de survie et d'action en JavaScript Canvas, jouable sur ordinateur et mobile.
 
@@ -7,7 +7,7 @@ Jeu de survie et d'action en JavaScript Canvas, jouable sur ordinateur et mobile
 - Les améliorations classiques restent limitées à 3/3.
 - Quand toutes les améliorations classiques sont au maximum, les niveaux suivants affichent les atouts légendaires encore disponibles, achetables avec des diamants.
 - Si tous les atouts légendaires sont déjà acquis, un bouton permet de continuer sans rester bloqué.
-- Un petit bouton développeur « +1 XP » se trouve dans le menu pause.
+- Un petit bouton développeur « +1 NIVEAU » se trouve dans le menu pause : il complète la barre d'XP, augmente le niveau et ouvre les améliorations au-dessus de la pause. Après le choix, le menu pause reste ouvert.
 
 ## Fonctionnalités
 - Carte explorable, plusieurs biomes, ruines et boss.
