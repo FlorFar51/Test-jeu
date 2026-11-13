@@ -54,3 +54,8 @@ html, body {
 /* v20 developer level control */
 #devLevelBtn{position:absolute;z-index:16;right:12px;top:calc(env(safe-area-inset-top) + 148px);padding:7px 10px;border:1px solid #ffbd59;border-radius:9px;background:#51351c;color:#ffe0a1;font-size:10px;font-weight:900;letter-spacing:.4px;box-shadow:0 0 12px #ffad3d55}
 #devLevelBtn:active{transform:scale(.96);background:#795020}
+
+/* v21 : commande développeur discrète dans le menu pause */
+#devXpBtn.devTiny{display:block;width:auto;min-height:0;margin:5px auto 0;padding:2px 6px;border:0;background:transparent;color:#63758b;font-size:9px;font-weight:500;opacity:.38;box-shadow:none;letter-spacing:.2px}
+#devXpBtn.devTiny:active{opacity:1;color:#9edcff}
+.maxUpgradeNote{margin:8px 4px;padding:12px;border:1px solid #c58cff55;border-radius:10px;background:#251b36;color:#e6d6ff;font-size:13px;line-height:1.45;text-align:center}
