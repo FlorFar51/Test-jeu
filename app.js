@@ -534,6 +534,80 @@ function isNearOasis(x,y){
     return null;
 }
 
+function ensureOasisFeatures(p) {
+    let cx = Math.floor(p.x / 700);
+    let cy = Math.floor(p.y / 700);
+
+    for (let bx = cx - 2; bx <= cx + 2; bx++) {
+        for (let by = cy - 2; by <= cy + 2; by++) {
+            for (let l of waterData(bx, by)) {
+                if (l.type !== 'oasis') continue;
+
+                if (dist(p, l) > 950) continue;
+
+                const key = bx + ',' + by;
+
+                if (G.oasisSpawned[key]) continue;
+
+                G.oasisSpawned[key] = true;
+
+                // Deux gardiens placés devant l'oasis
+                let base = Math.atan2(p.y - l.y, p.x - l.x);
+
+                for (let i = 0; i < 2; i++) {
+                    let angle = base + (i === 0 ? -0.62 : 0.62);
+
+                    let x = l.x + Math.cos(angle) * (l.rx + 38);
+                    let y = l.y + Math.sin(angle) * (l.ry + 38);
+
+                    G.en.push({
+                        kind: 'shade',
+                        shape: 0,
+                        color: '#090b10',
+                        x, y,
+                        hp: 18,
+                        maxHp: 18,
+                        xp: 12,
+                        speed: 88,
+                        dmg: 16,
+                        r: 17,
+                        coins: 4,
+                        attack: 0,
+                        hitT: 0,
+                        armor: 0,
+                        atk: rnd(1, 2.5),
+                        tele: 0,
+                        target: null
+                    });
+                }
+
+                // Trois soins flottants dans l'oasis
+                for (let i = 0; i < 3; i++) {
+                    let phase = i * Math.PI * 2 / 3;
+
+                    G.drops.push({
+                        x: l.x,
+                        y: l.y,
+                        r: 10,
+                        type: 'heal',
+                        v: 20,
+                        age: 0,
+                        orbit: {
+                            x: l.x,
+                            y: l.y,
+                            rx: l.rx * 0.38,
+                            ry: l.ry * 0.38,
+                            phase,
+                            speed: 0.8
+                        }
+                    });
+                }
+            }
+        }
+    }
+}
+
+
 function drawWater(p){
     let cx1=Math.floor((p.x-W/2)/700)-1;
     let cx2=Math.floor((p.x+W/2)/700)+1;
@@ -718,7 +792,9 @@ function impact(e,dmg,color='#fff',critical=false){
         floatText(e.x,e.y,'CRIT !','#ffd84c',14);
     }
 }
-function start(){document.body.classList.add('transitioning');setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};[...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={mapSeed:Math.floor(Math.random()*4294967296),p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,levelUpDelay:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();
+function start(){document.body.classList.add('transitioning');
+                 setTimeout(()=>document.body.classList.remove('transitioning'),300);let up={};
+                 [...SWORD_UP,...GUN_UP].forEach(x=>up[x[0]]=0);G={mapSeed:Math.floor(Math.random()*4294967296),oasisSpawned:{},p:{x:0,y:0,r:15,hp:100,maxHp:100},en:[],bul:[],enemyBul:[],bombs:[],slashes:[],drops:[],particles:[],texts:[],waves:[],blocks:{},bosses:[],bossTimer:180,bossIndex:0,bossCount:0,joy:null,kills:0,bossKills:0,damageDone:0,damageTaken:0,coinsRun:0,coresRun:0,carrying:false,coreExists:false,t:0,last:performance.now(),shot:0,spawn:0,inv:0,running:true,paused:false,level:1,xp:0,xpNeed:8,pending:0,levelUpDelay:0,up,fire:false,regenT:0,gun:false,smg:false,weapon:'pistol',swordT:0,swordMax:1.25,merchantT:45,merchantReady:false,merchantOpen:false,shake:0,levelFlash:0};updateHUD();
 show('game');
 
 requestAnimationFrame(() => {
@@ -748,38 +824,7 @@ function spawnEnemy(){
         MAP_HALF-40
     );
 
-    let oasis=null;
-
-    if(getBiome(G.p.x,G.p.y)==='desert'){
-        oasis=isNearOasis(G.p.x,G.p.y);
-    }
-
-    let e;
-
-    // Gardiens noirs autour des oasis
-    if(oasis&&Math.random()<.45){
-        let angle=Math.random()*Math.PI*2;
-        let radius=oasis.rx+65+Math.random()*75;
-
-        x=oasis.x+Math.cos(angle)*radius;
-        y=oasis.y+Math.sin(angle)*radius;
-
-        e={
-            kind:'shade',
-            shape:0,
-            color:'#090b10',
-            hp:18,
-            xp:12,
-            speed:88,
-            dmg:16,
-            r:17,
-            coins:4,
-            attack:0
-        };
-    }else{
-        e=enemyType();
-    }
-
+    let e = enemyType();
     const elite=Math.random()<.05;
 
     if(elite){
@@ -1115,6 +1160,58 @@ function buy(it){
 }
 function closeMerchant(){G.merchantOpen=false;G.paused=false;$('#merchant').classList.remove('show');G.last=performance.now();raf=requestAnimationFrame(loop)}
 function rangedEnemy(e,dt){let d=dist(e,G.p)||1,ideal=e.kind==='bomber'?330:260;if(d>ideal+35)move(e,(G.p.x-e.x)/d*e.speed*dt,(G.p.y-e.y)/d*e.speed*dt,blocks());else if(d<ideal-45)move(e,-(G.p.x-e.x)/d*e.speed*dt,-(G.p.y-e.y)/d*e.speed*dt,blocks());e.atk-=dt;if(e.atk<=0){if(e.kind==='bomber'){G.bombs.push({x:G.p.x,y:G.p.y,t:1.6,r:60})}else{let sp=e.kind==='spear'?340:230;G.enemyBul.push({x:e.x,y:e.y,vx:(G.p.x-e.x)/d*sp,vy:(G.p.y-e.y)/d*sp,r:e.kind==='spear'?6:4,dmg:e.dmg,life:2.4,color:e.kind==='spear'?'#ffad4d':'#78b8ff'})}e.atk=e.kind==='bomber'?6:e.kind==='spear'?2.5:2}}
+
+function separateEnemies(obstacles) {
+    const enemies = G.en;
+
+    // Deux passes pour corriger les chevauchements
+    for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < enemies.length; i++) {
+            let a = enemies[i];
+
+            for (let j = i + 1; j < enemies.length; j++) {
+                let other = enemies[j];
+
+                let dx = other.x - a.x;
+                let dy = other.y - a.y;
+                let d = Math.hypot(dx, dy);
+
+                let minDist = (a.r || 14) + (other.r || 14) + 6;
+
+                if (d >= minDist) continue;
+
+                // Évite les divisions par zéro
+                if (d < 0.001) {
+                    let angle = (i * 17 + j * 31) * Math.PI / 180;
+                    dx = Math.cos(angle);
+                    dy = Math.sin(angle);
+                    d = 1;
+                }
+
+                let nx = dx / d;
+                let ny = dy / d;
+
+                let push = (minDist - d) * 0.65;
+
+                // Repousse les deux ennemis
+                move(
+                    a,
+                    -nx * push * 0.5,
+                    -ny * push * 0.5,
+                    obstacles
+                );
+
+                move(
+                    other,
+                    nx * push * 0.5,
+                    ny * push * 0.5,
+                    obstacles
+                );
+            }
+        }
+    }
+}
+
 function bossAttack(q,dt){
     q.attackT-=dt;
     if(q.attackT>0)return;
@@ -1189,7 +1286,7 @@ if(j&&j.mag>8){
 }
 
 G.t+=dt;
-
+ensureOasisFeatures(p);
 // Lave
 G.lavaT=Math.max(0,(G.lavaT||0)-dt);
 
@@ -1295,7 +1392,10 @@ if(G.bossTimer<=0){
     );
     contact(e,e.dmg);
 }
-}for(let q of G.bosses.filter(x=>x.alive)){
+}
+separateEnemies(b);
+
+for(let q of G.bosses.filter(x=>x.alive)){
     q.hitT=Math.max(0,q.hitT-dt);
     q.flash=Math.max(0,(q.flash||0)-dt);
     q.squash=Math.max(0,(q.squash||0)-dt);
@@ -1321,7 +1421,15 @@ if(G.bossTimer<=0){
     }else{
         kill(e);
     }
-}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}if(G.pending>0&&!G.paused){
+}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}// Déplacement des soins dans les oasis
+for(let d of G.drops){
+    if(!d.orbit) continue;
+
+    let a = d.age * d.orbit.speed + d.orbit.phase;
+
+    d.x = d.orbit.x + Math.cos(a) * d.orbit.rx;
+    d.y = d.orbit.y + Math.sin(a) * d.orbit.ry;
+}for(let d of G.drops)if(d.type==='coin'&&dist(d,p)<s.magnet){let m=dist(d,p)||1;d.x+=(p.x-d.x)/m*270*dt;d.y+=(p.y-d.y)/m*270*dt}G.drops=G.drops.filter(d=>{if(dist(d,p)<p.r+d.r+5){if(d.type==='coin'){G.coinsRun+=d.v;floatText(p.x,p.y-25,'+'+d.v,'#ffd84c');particle(p.x,p.y,'#ffd84c',3,45)}else if(d.type==='heal'){p.hp=Math.min(p.maxHp,p.hp+d.v);floatText(p.x,p.y-28,'+'+d.v+' PV','#5cff8d',14);particle(p.x,p.y,'#5cff8d',8,75)}else{G.carrying=true;G.coreExists=false;notify('Noyau rare récupéré','rare');floatText(p.x,p.y-35,'NOYAU RARE','#d562ff',16);G.waves.push({x:p.x,y:p.y,r:20,life:.8,max:.8,color:'#d562ff'})}return false}return dist(d,p)<1900});if(G.carrying&&Math.hypot(p.x,p.y)<48){G.carrying=false;G.coresRun++;localStorage.cores=+(localStorage.cores||0)+1}if(G.pending>0&&!G.paused){
     G.levelUpDelay-=dt;
 
     if(G.levelUpDelay<=0){
