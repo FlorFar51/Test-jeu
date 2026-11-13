@@ -25,7 +25,7 @@ const MAP_SIZE=12000;
 const MAP_HALF=MAP_SIZE/2;
 
 const RUINS=[
-{id:'forest',name:'Sanctuaire des Racines',biome:'forest',x:0,y:0,color:'#7bc77a',stone:'#526b4c',symbol:'✦'},
+{id:'forest',name:'Sanctuaire des Racines',biome:'forest',x:1100,y:1100,color:'#7bc77a',stone:'#526b4c',symbol:'✦'},
 {id:'volcano',name:'Forge des Cendres',biome:'volcano',x:-2200,y:0,color:'#ff7545',stone:'#69443c',symbol:'♨'},
 {id:'ice',name:'Temple du Givre',biome:'ice',x:2200,y:0,color:'#8be8ff',stone:'#668a9a',symbol:'❄'},
 {id:'swamp',name:'Autel Englouti',biome:'swamp',x:-3700,y:-3700,color:'#b4d45a',stone:'#586044',symbol:'☠'},
@@ -1078,9 +1078,9 @@ function kill(e,boss=false,bySword=false){
     if(boss){
         G.bossKills++;
         const bossCoins=e.ruinId?(RUIN_BOSSES[e.ruinId]?.coins||250):150;
-        G.coinsRun+=bossCoins;
+        if(!e.ruinId)G.coinsRun+=150;
 
-        notify('+'+bossCoins+' PIÈCES — BOSS ÉLIMINÉ !','rare');
+        notify(e.ruinId?'RÉCOMPENSE : '+bossCoins+' PIÈCES À RÉCUPÉRER !':'+'+bossCoins+' PIÈCES — BOSS ÉLIMINÉ !','rare');
 
         particle(e.x,e.y,'#ffd84c',40,260);
         floatText(e.x,e.y-55,'+'+(e.ruinId?(RUIN_BOSSES[e.ruinId]?.coins||250):150)+' PIÈCES','#ffd84c',20);
