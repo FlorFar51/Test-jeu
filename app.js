@@ -15,6 +15,12 @@ const BIOME_COLORS = {
     detail: '#d0b477'
   }
 };
+const BLOCK_COLORS = {
+    default: ['#59616b', '#343b45'],
+    forest: ['#47734b', '#294b32'],
+    swamp: ['#68734a', '#414a30'],
+    desert: ['#c9a45e', '#92703c']
+};
 const MAP_SIZE=10000;
 const MAP_HALF=MAP_SIZE/2;
 const SWORD_UP=[['sDamage','Impact',['+40 % dégâts','+90 % dégâts','+160 % dégâts']],['sRange','Zone de frappe',['105 px','125 px','150 px']],['sRate','Recharge',['1,10 s','0,95 s','0,80 s']],['lifeSteal','Vampirisme',['4 %','8 %','12 %']]];
@@ -1375,7 +1381,7 @@ X.strokeStyle='#48e7ff';
                 X.lineWidth=4;X.beginPath();X.arc(0,0,38,0,7);X.stroke();
 for (let o of blocks()) {
     let biome = getBiome(o.x + o.w / 2, o.y + o.h / 2);
-    let colors = BLOCK_COLORS[biome];
+    let colors = BLOCK_COLORS[biome] || BLOCK_COLORS.default;
 
     X.fillStyle = o.w < 35 ? colors[0] : colors[1];
     X.fillRect(o.x, o.y, o.w, o.h);
