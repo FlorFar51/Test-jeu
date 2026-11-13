@@ -34,13 +34,13 @@ const RUINS=[
 {id:'crystal',name:'Observatoire Cristallin',biome:'crystal',x:3700,y:3700,color:'#76eaff',stone:'#477d9b',symbol:'✦'}
 ];
 const RUIN_BOSSES={
-forest:{name:'Florax, Gardien Sylvestre',color:'#67c65c',hp:260,xp:120,coins:220,r:34},
-volcano:{name:'Ignar, Cœur de Magma',color:'#ff6338',hp:300,xp:140,coins:240,r:35},
-ice:{name:'Cryon, Sentinelle de Glace',color:'#71dfff',hp:320,xp:150,coins:250,r:36},
-swamp:{name:'Mordec, Œil des Marais',color:'#a9c84c',hp:340,xp:160,coins:270,r:34},
-desert:{name:'Mékan, Scarabée Ancien',color:'#e8b95c',hp:370,xp:175,coins:290,r:37},
-corrupt:{name:'Nox, Crâne des Ombres',color:'#bd6be8',hp:410,xp:190,coins:320,r:36},
-crystal:{name:'Astra, Cœur Prismatique',color:'#5edcff',hp:450,xp:220,coins:350,r:38}
+forest:{name:'Florax, Gardien Sylvestre',color:'#67c65c',hp:140,xp:120,coins:220,r:34},
+volcano:{name:'Ignar, Cœur de Magma',color:'#ff6338',hp:160,xp:140,coins:240,r:35},
+ice:{name:'Cryon, Sentinelle de Glace',color:'#71dfff',hp:175,xp:150,coins:250,r:36},
+swamp:{name:'Mordec, Œil des Marais',color:'#a9c84c',hp:185,xp:160,coins:270,r:34},
+desert:{name:'Mékan, Scarabée Ancien',color:'#e8b95c',hp:200,xp:175,coins:290,r:37},
+corrupt:{name:'Nox, Crâne des Ombres',color:'#bd6be8',hp:220,xp:190,coins:320,r:36},
+crystal:{name:'Astra, Cœur Prismatique',color:'#5edcff',hp:240,xp:220,coins:350,r:38}
 };
 const SWORD_UP=[['sDamage','Impact',['+50 % dégâts','+100 % dégâts','+175 % dégâts']],['sRange','Zone de frappe',['70 px','100 px','125 px']],['sRate','Recharge',['-12 % délai','-24 % délai','-36 % délai']],['lifeSteal','Vampirisme',['5 %','10 %','15 %']]];
 const GUN_UP=[['multi','Tir multiple',['2 projectiles','3 projectiles','4 projectiles']],['damage','Puissance',['+20 % dégâts','+40 % dégâts','+65 % dégâts']],['rate','Cadence',['+12 %','+25 %','+40 %']],['range','Portée',['380 px','440 px','500 px']],['life','Vie maximale',['120 PV et +20 PV','145 PV et +20 PV','175 PV et +20 PV']],['armor','Armure',['-8 % dégâts','-16 % dégâts','-25 % dégâts']],['speed','Vitesse',['+8 %','+15 %','+23 %']],['magnet','Aimant',['120 px','170 px','230 px']],['pierce','Perforation',['1 ennemi','2 ennemis','3 ennemis']],['regen','Régénération',['1 PV / 10 s','1 PV / 7 s','1 PV / 4 s']]];
@@ -923,7 +923,7 @@ let y=clamp(G.p.y+Math.sin(angle)*distance,-MAP_HALF+120,MAP_HALF-120);
         hitT:0,
         active:true,
         hunting:true,
-        speed:52+G.bossCount*2,
+        speed:30+Math.min(G.bossCount,5),
         armor:0,
         attackT:2,
         attackPattern:0
@@ -939,7 +939,7 @@ function activateRuins(){
         if(G.ruins[ruin.id]||dist(G.p,ruin)>560)continue;
         G.ruins[ruin.id]='awakened';
         const t=RUIN_BOSSES[ruin.id];
-        const boss={...t,ruinId:ruin.id,x:ruin.x,y:ruin.y,homeX:ruin.x,homeY:ruin.y,maxHp:t.hp,hp:t.hp,alive:true,hitT:0,flash:0,squash:0,active:false,hunting:false,speed:48,armor:0,attackT:1.2,attackPattern:0,rotation:0,xp:t.xp};
+        const boss={...t,ruinId:ruin.id,x:ruin.x,y:ruin.y,homeX:ruin.x,homeY:ruin.y,maxHp:t.hp,hp:t.hp,alive:true,hitT:0,flash:0,squash:0,active:false,hunting:false,speed:22,armor:0,attackT:2.0,attackPattern:0,rotation:0,xp:t.xp};
         G.bosses.push(boss);
         notify('RUINES ÉVEILLÉES : '+ruin.name,'rare');
         particle(ruin.x,ruin.y,ruin.color,42,250);
@@ -1304,13 +1304,13 @@ function bossAttack(q,dt){
 
     if(q.ruinId){
         const patterns={
-            forest:{count:8,speed:185,r:7,dmg:12,mode:'ring'},
-            volcano:{count:9,speed:205,r:8,dmg:14,mode:'ring'},
-            ice:{count:6,speed:235,r:7,dmg:13,mode:'star'},
-            swamp:{count:10,speed:155,r:8,dmg:12,mode:'ring'},
-            desert:{count:5,speed:285,r:7,dmg:15,mode:'fan'},
-            corrupt:{count:12,speed:180,r:7,dmg:14,mode:'spiral'},
-            crystal:{count:3,speed:300,r:9,dmg:16,mode:'fan'}
+            forest:{count:6,speed:145,r:6,dmg:8,mode:'ring'},
+            volcano:{count:7,speed:155,r:7,dmg:9,mode:'ring'},
+            ice:{count:5,speed:165,r:6,dmg:9,mode:'star'},
+            swamp:{count:7,speed:125,r:7,dmg:8,mode:'ring'},
+            desert:{count:4,speed:185,r:6,dmg:10,mode:'fan'},
+            corrupt:{count:8,speed:140,r:6,dmg:9,mode:'spiral'},
+            crystal:{count:3,speed:200,r:7,dmg:10,mode:'fan'}
         };
         const cfg=patterns[q.ruinId]||patterns.forest;
         q.rotation=(q.rotation||0)+.34;
@@ -1324,13 +1324,13 @@ function bossAttack(q,dt){
             G.enemyBul.push({x:q.x,y:q.y,vx:Math.cos(a)*cfg.speed,vy:Math.sin(a)*cfg.speed,r:cfg.r,dmg:cfg.dmg,life:3.6,color:q.color});
         }
         particle(q.x,q.y,q.color,16,150);
-        q.attackT=q.ruinId==='volcano'||q.ruinId==='corrupt'?2.25:2.6;
+        q.attackT=q.ruinId==='volcano'||q.ruinId==='corrupt'?3.2:3.5;
         return;
     }
 
     // Attaque 1 : cercle de 12 projectiles
     if(q.attackPattern===0){
-        let count=12;
+        let count=8;
 
         for(let i=0;i<count;i++){
             let a=i*Math.PI*2/count;
@@ -1338,10 +1338,10 @@ function bossAttack(q,dt){
             G.enemyBul.push({
                 x:q.x,
                 y:q.y,
-                vx:Math.cos(a)*180,
-                vy:Math.sin(a)*180,
-                r:7,
-                dmg:12,
+                vx:Math.cos(a)*145,
+                vy:Math.sin(a)*145,
+                r:6,
+                dmg:8,
                 life:3.5,
                 color:q.color
             });
@@ -1352,7 +1352,7 @@ function bossAttack(q,dt){
 
     // Attaque 2 : éventail de 7 projectiles ciblant le joueur
     else{
-        let count=7;
+        let count=5;
 
         for(let i=0;i<count;i++){
             let spread=(i-(count-1)/2)*0.20;
@@ -1361,10 +1361,10 @@ function bossAttack(q,dt){
             G.enemyBul.push({
                 x:q.x,
                 y:q.y,
-                vx:Math.cos(a)*270,
-                vy:Math.sin(a)*270,
+                vx:Math.cos(a)*190,
+                vy:Math.sin(a)*190,
                 r:6,
-                dmg:15,
+                dmg:9,
                 life:3,
                 color:'#ffcf62'
             });
@@ -1374,7 +1374,7 @@ function bossAttack(q,dt){
     }
 
     particle(q.x,q.y,q.color,12,120);
-    q.attackT=2.7;
+    q.attackT=3.4;
 }
 
 function update(dt){
@@ -1547,16 +1547,17 @@ for(let q of G.bosses.filter(x=>x.alive)){
     q.active=q.hunting||dp<310;
 
     if(q.active){
-        let d=dp||1;
-        if(q.hunting){
-            move(
-                q,
-                (p.x-q.x)/d*q.speed*(G.legendary?.slow?.75:1)*dt,
-                (p.y-q.y)/d*q.speed*(G.legendary?.slow?.75:1)*dt,
-                b
-            );
+        let tx=p.x,ty=p.y;
+        if(q.ruinId){
+            const homeDist=Math.hypot(q.x-q.homeX,q.y-q.homeY);
+            if(homeDist>260){tx=q.homeX;ty=q.homeY;}
+            else if(dp<135){tx=q.x;ty=q.y;}
         }
-        contact(q,q.ruinId?16:18);
+        const dx=tx-q.x,dy=ty-q.y,d=Math.hypot(dx,dy)||1;
+        if(d>8){
+            move(q,dx/d*q.speed*(G.legendary?.75:1)*dt,dy/d*q.speed*(G.legendary?.75:1)*dt,b);
+        }
+        contact(q,q.ruinId?12:14);
         bossAttack(q,dt);
     }
 }for(let q of G.bul){let dx=q.vx*dt,dy=q.vy*dt;q.x+=dx;q.y+=dy;q.travel+=Math.hypot(dx,dy);if(b.some(o=>hit(q,o)))q.travel=9999;for(let e of[...G.en,...G.bosses.filter(z=>z.alive)])if(!q.seen.has(e)&&dist(q,e)<q.r+e.r){q.seen.add(e);e.hp-=q.damage;G.damageDone+=q.damage;e.hitT=3;impact(e,q.damage,q.fire?'#ff8a3d':'#ffe56a',q.critical);q.hits--;if(q.fire)e.burn=2;if(q.chainLeft>0){let next=[...G.en,...G.bosses.filter(z=>z.alive)].filter(z=>z!==e&&!q.seen.has(z)&&dist(z,e)<190).sort((a,b)=>dist(a,e)-dist(b,e))[0];if(next){q.seen.add(next);let cdmg=q.damage*.6;next.hp-=cdmg;G.damageDone+=cdmg;next.hitT=3;impact(next,cdmg,'#67d9ff');q.chainLeft--;if(next.hp<=0){let boss=G.bosses.includes(next);if(boss)next.alive=false;kill(next,boss)}}}if(e.hp<=0){
