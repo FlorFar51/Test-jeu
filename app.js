@@ -1,10 +1,26 @@
 const $=s=>document.querySelector(s),C=$('#c'),X=C.getContext('2d'),screens=[...document.querySelectorAll('.screen')];let W,H,dpr,G,raf;
-const CFG={spawnRate:2.0,minSpawnInterval:1.0,spawnRamp:420,maxEnemies:55};const BOSS=[{x:650,y:0,name:'Gardien Est',color:'#ff784d',hp:55,xp:22},{x:-620,y:-620,name:'Gardien Nord-Ouest',color:'#f04d8b',hp:80,xp:28},{x:0,y:900,name:'Colosse Sud',color:'#a96cff',hp:110,xp:35}];
+const CFG={spawnRate:2.0,minSpawnInterval:1.0,spawnRamp:420,maxEnemies:55};
+const BOSS=[{x:650,y:0,name:'Gardien Est',color:'#ff784d',hp:55,xp:22},{x:-620,y:-620,name:'Gardien Nord-Ouest',color:'#f04d8b',hp:80,xp:28},{x:0,y:900,name:'Colosse Sud',color:'#a96cff',hp:110,xp:35}];
+const BIOME_COLORS = {
+  forest: {
+    ground: '#263d2b',
+    detail: '#355438'
+  },
+  swamp: {
+    ground: '#293b2b',
+    detail: '#46502d'
+  },
+  desert: {
+    ground: '#b99a5d',
+    detail: '#d0b477'
+  }
+};
 const MAP_SIZE=10000;
 const MAP_HALF=MAP_SIZE/2;
 const SWORD_UP=[['sDamage','Impact',['+40 % dégâts','+90 % dégâts','+160 % dégâts']],['sRange','Zone de frappe',['105 px','125 px','150 px']],['sRate','Recharge',['1,10 s','0,95 s','0,80 s']],['lifeSteal','Vampirisme',['4 %','8 %','12 %']]];
 const GUN_UP=[['multi','Tir multiple',['2 projectiles','3 projectiles','4 projectiles']],['damage','Puissance',['+25 % dégâts','+50 % dégâts','+80 % dégâts']],['rate','Cadence',['+15 %','+30 %','+45 %']],['range','Portée',['380 px','440 px','500 px']],['life','Vie maximale',['120 PV et +20 PV','145 PV et +20 PV','175 PV et +20 PV']],['armor','Armure',['-10 % dégâts','-20 % dégâts','-30 % dégâts']],['speed','Vitesse',['+8 %','+16 %','+25 %']],['magnet','Aimant',['120 px','170 px','230 px']],['pierce','Perforation',['1 ennemi','2 ennemis','3 ennemis']],['regen','Régénération',['1 PV / 12 s','1 PV / 8 s','1 PV / 5 s']]];
-const ICONS={sDamage:'⚔',sRange:'↗',sRate:'⏱',lifeSteal:'♥',multi:'⑂',damage:'💥',rate:'⚡',range:'◎',life:'✚',armor:'⬡',speed:'➤',magnet:'🧲',pierce:'➶',regen:'♻',fire:'🔥'};const COLORS={sDamage:'#ff7b63',sRange:'#79d7ff',sRate:'#ffd45f',lifeSteal:'#ff668b',multi:'#ffe475',damage:'#ff695e',rate:'#63dbff',range:'#70b9ff',life:'#66e28b',armor:'#9fb7d8',speed:'#70e5ca',magnet:'#c18cff',pierce:'#e2e8ff',regen:'#5de19b',fire:'#ff8a36'};
+const ICONS={sDamage:'⚔',sRange:'↗',sRate:'⏱',lifeSteal:'♥',multi:'⑂',damage:'💥',rate:'⚡',range:'◎',life:'✚',armor:'⬡',speed:'➤',magnet:'🧲',pierce:'➶',regen:'♻',fire:'🔥'};
+const COLORS={sDamage:'#ff7b63',sRange:'#79d7ff',sRate:'#ffd45f',lifeSteal:'#ff668b',multi:'#ffe475',damage:'#ff695e',rate:'#63dbff',range:'#70b9ff',life:'#66e28b',armor:'#9fb7d8',speed:'#70e5ca',magnet:'#c18cff',pierce:'#e2e8ff',regen:'#5de19b',fire:'#ff8a36'};
 let SETTINGS=JSON.parse(localStorage.nzSettings||'{}');SETTINGS={effects:'normal',vibration:true,shake:true,damageText:true,joyOpacity:100,buttonSize:'normal',eco:false,...SETTINGS};function saveSettings(){localStorage.nzSettings=JSON.stringify(SETTINGS);applySettings()}function applySettings(){document.documentElement.style.setProperty('--joy-opacity',SETTINGS.joyOpacity/100);document.body.classList.toggle('largeButtons',SETTINGS.buttonSize==='large');document.body.classList.toggle('eco',SETTINGS.eco)}applySettings();function notify(text,kind='info'){let n=document.createElement('div');n.className='toast '+kind;n.textContent=text;document.body.appendChild(n);setTimeout(()=>n.classList.add('show'),10);setTimeout(()=>{n.classList.remove('show');setTimeout(()=>n.remove(),250)},1600)}
 
 
