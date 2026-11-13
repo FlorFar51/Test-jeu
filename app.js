@@ -138,39 +138,7 @@ function blocks(){
 // Est : glacier
 // Coins : 4 biomes spécifiques
 
-function getBiome(x, y) {
-    if (Math.abs(x) > 2500 && Math.abs(y) > 2500) {
-        if (x < 0 && y < 0) return 'swamp';
-        if (x > 0 && y < 0) return 'desert';
-        if (x < 0 && y > 0) return 'corrupt';
-        return 'crystal';
-    }
 
-    if (x < -1500) return 'volcano';
-    if (x > 1500) return 'ice';
-
-    return 'forest';
-}
-
-const BIOME_COLORS = {
-    forest: '#172b20',
-    volcano: '#281b1a',
-    ice: '#192b40',
-    swamp: '#202b20',
-    desert: '#393020',
-    corrupt: '#291b32',
-    crystal: '#20243b'
-};
-
-const BLOCK_COLORS = {
-    forest: ['#38533e', '#293e30'],
-    volcano: ['#69433a', '#422b2a'],
-    ice: ['#66889c', '#3d596c'],
-    swamp: ['#46523a', '#303b2b'],
-    desert: ['#88734a', '#625034'],
-    corrupt: ['#67416e', '#402b4b'],
-    crystal: ['#526a91', '#354768']
-};
 
 // Générateur aléatoire déterministe
 function makeRandom(seed) {
@@ -179,6 +147,30 @@ function makeRandom(seed) {
         seed ^= seed + Math.imul(seed ^ seed >>> 7, 61 | seed);
         return ((seed ^ seed >>> 14) >>> 0) / 4294967296;
     };
+}
+
+function getBiome(x, y) {
+    // Déformation déterministe des coordonnées :
+    // les frontières ne sont plus parfaitement droites.
+    const wx = x
+        + Math.sin(y / 390) * 230
+        + Math.sin(y / 170 + x / 700) * 95;
+
+    const wy = y
+        + Math.sin(x / 430) * 220
+        + Math.sin(x / 190 + y / 650) * 85;
+
+    if (Math.abs(wx) > 2500 && Math.abs(wy) > 2500) {
+        if (wx < 0 && wy < 0) return 'swamp';
+        if (wx > 0 && wy < 0) return 'desert';
+        if (wx < 0 && wy > 0) return 'corrupt';
+        return 'crystal';
+    }
+
+    if (wx < -1500) return 'volcano';
+    if (wx > 1500) return 'ice';
+
+    return 'forest';
 }
 
 // Décors : peu nombreux et imposants
@@ -228,38 +220,28 @@ function decorData(cx, cy) {
     return objects;
 }
 
+
 function drawBiomeGround(p) {
     X.fillStyle = '#0d1b2c';
-    X.fillRect(p.x - W / 2, p.y - H / 2, W, H);
+    X.fillRect(p.x-W/2,p.y-H/2,W,H);
 
-    let left = Math.max(-MAP_HALF, p.x - W / 2);
-    let right = Math.min(MAP_HALF, p.x + W / 2);
-    let top = Math.max(-MAP_HALF, p.y - H / 2);
-    let bottom = Math.min(MAP_HALF, p.y + H / 2);
+    const size = 85;
 
-    // Fond par bandes verticales et zones de coin
-    const zones = [
-        { x1: -5000, x2: -2500, y1: -5000, y2: 5000, biome: 'volcano' },
-        { x1: 2500, x2: 5000, y1: -5000, y2: 5000, biome: 'ice' },
-        { x1: -2500, x2: 2500, y1: -5000, y2: 5000, biome: 'forest' },
-        { x1: -5000, x2: -2500, y1: -5000, y2: -2500, biome: 'swamp' },
-        { x1: 2500, x2: 5000, y1: -5000, y2: -2500, biome: 'desert' },
-        { x1: -5000, x2: -2500, y1: 2500, y2: 5000, biome: 'corrupt' },
-        { x1: 2500, x2: 5000, y1: 2500, y2: 5000, biome: 'crystal' }
-    ];
+    const left = Math.max(-MAP_HALF, Math.floor((p.x-W/2)/size)*size);
+    const right = Math.min(MAP_HALF, p.x+W/2+size);
+    const top = Math.max(-MAP_HALF, Math.floor((p.y-H/2)/size)*size);
+    const bottom = Math.min(MAP_HALF, p.y+H/2+size);
 
-    for (let z of zones) {
-        let x1 = Math.max(left, z.x1);
-        let x2 = Math.min(right, z.x2);
-        let y1 = Math.max(top, z.y1);
-        let y2 = Math.min(bottom, z.y2);
+    for(let x=left;x<right;x+=size){
+        for(let y=top;y<bottom;y+=size){
+            const biome=getBiome(x+size/2,y+size/2);
 
-        if (x2 <= x1 || y2 <= y1) continue;
-
-        X.fillStyle = BIOME_COLORS[z.biome];
-        X.fillRect(x1, y1, x2 - x1, y2 - y1);
+            X.fillStyle=BIOME_COLORS[biome];
+            X.fillRect(x,y,size+1,size+1);
+        }
     }
 }
+
 
 // Décors droits, sans rotation
 function drawDecorations(p) {
@@ -439,6 +421,178 @@ function lavaData(cx, cy) {
     return pools;
 }
 
+function waterData(cx,cy){
+    let seed=(
+        cx*73856093 ^
+        cy*19349663 ^
+        G.mapSeed ^
+        918273
+    )>>>0;
+
+    let r=makeRandom(seed);
+    let x=cx*700+100+r()*500;
+    let y=cy*700+100+r()*500;
+
+    const biome=getBiome(x,y);
+
+    let chance=0;
+    let type='';
+
+    if(biome==='forest'){
+        chance=.27;
+        type='lake';
+    }
+    else if(biome==='swamp'){
+        chance=.32;
+        type='poison';
+    }
+    else if(biome==='desert'){
+        chance=.085;
+        type='oasis';
+    }
+
+    if(r()>chance)return [];
+
+    let radius=type==='oasis'
+        ? 25+r()*18
+        : type==='poison'
+            ? 145+r()*100
+            : 120+r()*100;
+
+    return [{
+        x,y,
+        rx:radius,
+        ry:radius*(.65+r()*.35),
+        phase:r()*Math.PI*2,
+        type
+    }];
+}
+
+function terrainAt(p){
+    let cx=Math.floor(p.x/700);
+    let cy=Math.floor(p.y/700);
+
+    for(let x=cx-1;x<=cx+1;x++){
+        for(let y=cy-1;y<=cy+1;y++){
+            for(let l of waterData(x,y)){
+                let dx=(p.x-l.x)/l.rx;
+                let dy=(p.y-l.y)/l.ry;
+
+                let angle=Math.atan2(dy,dx);
+                let irregular=1+
+                    Math.sin(angle*3+l.phase)*.07+
+                    Math.sin(angle*5-l.phase)*.035;
+
+                if(Math.hypot(dx,dy)<irregular*.88){
+                    return l.type;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+function isNearOasis(x,y){
+    let cx=Math.floor(x/700);
+    let cy=Math.floor(y/700);
+
+    for(let bx=cx-2;bx<=cx+2;bx++){
+        for(let by=cy-2;by<=cy+2;by++){
+            for(let l of waterData(bx,by)){
+                if(l.type==='oasis' &&
+                   Math.hypot(x-l.x,y-l.y)<l.rx+115){
+                    return l;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+function drawWater(p){
+    let cx1=Math.floor((p.x-W/2)/700)-1;
+    let cx2=Math.floor((p.x+W/2)/700)+1;
+    let cy1=Math.floor((p.y-H/2)/700)-1;
+    let cy2=Math.floor((p.y+H/2)/700)+1;
+
+    let t=performance.now()/1000;
+
+    for(let cx=cx1;cx<=cx2;cx++){
+        for(let cy=cy1;cy<=cy2;cy++){
+            for(let l of waterData(cx,cy)){
+                X.save();
+                X.translate(l.x,l.y);
+
+                const poison=l.type==='poison';
+                const oasis=l.type==='oasis';
+
+                X.fillStyle=poison?'#172d23':
+                    oasis?'#66502a':'#172d36';
+
+                X.beginPath();
+                X.ellipse(0,0,l.rx*1.1,l.ry*1.12,0,0,Math.PI*2);
+                X.fill();
+
+                X.fillStyle=poison?'#548b35':
+                    oasis?'#38b9a1':'#267dba';
+
+                X.beginPath();
+
+                for(let i=0;i<=40;i++){
+                    let a=i/40*Math.PI*2;
+                    let wobble=1+
+                        Math.sin(a*3+l.phase)*.07+
+                        Math.sin(a*5-l.phase)*.035;
+
+                    let xx=Math.cos(a)*l.rx*wobble;
+                    let yy=Math.sin(a)*l.ry*wobble;
+
+                    if(i===0)X.moveTo(xx,yy);
+                    else X.lineTo(xx,yy);
+                }
+
+                X.closePath();
+                X.fill();
+
+                // Reflets animés
+                X.globalAlpha=.3;
+                X.strokeStyle=oasis?'#b6fff0':
+                    poison?'#b0d84b':'#a3eaff';
+
+                X.lineWidth=3;
+                X.beginPath();
+                X.ellipse(
+                    Math.sin(t+l.phase)*l.rx*.2,
+                    Math.cos(t*.7+l.phase)*l.ry*.2,
+                    l.rx*.35,l.ry*.18,0,0,Math.PI*2
+                );
+                X.stroke();
+                X.globalAlpha=1;
+
+                // Petites plantes autour des oasis
+                if(oasis){
+                    X.fillStyle='#276d37';
+
+                    for(let i=0;i<5;i++){
+                        let a=i*Math.PI*2/5+l.phase;
+                        let xx=Math.cos(a)*l.rx*1.25;
+                        let yy=Math.sin(a)*l.ry*1.25;
+
+                        X.beginPath();
+                        X.arc(xx,yy,5,0,Math.PI*2);
+                        X.fill();
+                    }
+                }
+
+                X.restore();
+            }
+        }
+    }
+}
+
+
 function isOnLava(p) {
     let cx = Math.floor(p.x / 700);
     let cy = Math.floor(p.y / 700);
@@ -554,21 +708,79 @@ requestAnimationFrame(() => {
 });
                 }
 function enemyType(){let t=G.t,r=Math.random();if(t>=240&&r<.06&&G.en.filter(e=>e.kind==='bomber').length<2)return{kind:'bomber',shape:2,color:'#9d55d9',hp:9,xp:10,speed:34,dmg:18,r:18,coins:4,attack:1};if(t>=120&&r<.28)return{kind:'spear',shape:1,color:'#f0a33e',hp:7,xp:7,speed:55,dmg:15,r:16,coins:3,attack:1};if(t>=90&&r<.38)return{kind:'shooter',shape:3,color:'#397ccf',hp:4,xp:6,speed:52,dmg:8,r:14,coins:2,attack:1};if(t>=420&&r<.55)return{kind:'tank',shape:3,color:'#9aa4b2',hp:18,xp:15,speed:62,dmg:22,r:19,coins:5,attack:0};if(t>=60&&r>=.55&&r<.78)return{kind:'brute',shape:0,color:'#b96b45',hp:8,xp:3,speed:58,dmg:13,r:15,coins:2,attack:0};return{kind:'chaser',shape:0,color:'#e54855',hp:t>=120?4:4,xp:1,speed:68,dmg:10,r:14,coins:1,attack:0}}
-function spawnEnemy(){let a=Math.random()*Math.PI*2,d=Math.max(W,H)*.62+80,e=enemyType();const elite=Math.random()<0.05;
 
-if(elite){
+function spawnEnemy(){
+    let a=Math.random()*Math.PI*2;
+    let d=Math.max(W,H)*.62+80;
 
-    e.hp*=3;
-    e.maxHp=e.hp;
-    e.speed*=1.15;
-    e.coins*=4;
-    e.xp*=3;
-    e.color='#ffd84c';
-    e.r*=1.4;
-}let x=clamp(G.p.x+Math.cos(a)*d,-MAP_HALF+e.r+20,MAP_HALF-e.r-20);
-let y=clamp(G.p.y+Math.sin(a)*d,-MAP_HALF+e.r+20,MAP_HALF-e.r-20);
+    let x=clamp(
+        G.p.x+Math.cos(a)*d,
+        -MAP_HALF+40,
+        MAP_HALF-40
+    );
 
-G.en.push({...e,x,y,maxHp:e.hp,hitT:0,armor:0,atk:rnd(1,2.5),tele:0,target:null});}
+    let y=clamp(
+        G.p.y+Math.sin(a)*d,
+        -MAP_HALF+40,
+        MAP_HALF-40
+    );
+
+    let oasis=null;
+
+    if(getBiome(G.p.x,G.p.y)==='desert'){
+        oasis=isNearOasis(G.p.x,G.p.y);
+    }
+
+    let e;
+
+    // Gardiens noirs autour des oasis
+    if(oasis&&Math.random()<.45){
+        let angle=Math.random()*Math.PI*2;
+        let radius=oasis.rx+65+Math.random()*75;
+
+        x=oasis.x+Math.cos(angle)*radius;
+        y=oasis.y+Math.sin(angle)*radius;
+
+        e={
+            kind:'shade',
+            shape:0,
+            color:'#090b10',
+            hp:18,
+            xp:12,
+            speed:88,
+            dmg:16,
+            r:17,
+            coins:4,
+            attack:0
+        };
+    }else{
+        e=enemyType();
+    }
+
+    const elite=Math.random()<.05;
+
+    if(elite){
+        e.hp*=3;
+        e.maxHp=e.hp;
+        e.speed*=1.15;
+        e.coins*=4;
+        e.xp*=3;
+        e.color='#ffd84c';
+        e.r*=1.4;
+    }
+
+    G.en.push({
+        ...e,
+        x,y,
+        maxHp:e.hp,
+        hitT:0,
+        armor:0,
+        atk:rnd(1,2.5),
+        tele:0,
+        target:null
+    });
+}
+
 function spawnBoss(){
     let template=BOSS[G.bossIndex%BOSS.length];
     G.bossIndex++;
@@ -935,7 +1147,72 @@ function bossAttack(q,dt){
     particle(q.x,q.y,q.color,12,120);
     q.attackT=2.7;
 }
-function update(dt){let p=G.p,b=blocks(),s=stats(),j=G.joy;if(j&&j.mag>8)move(p,j.dx/j.mag*s.speed*dt,j.dy/j.mag*s.speed*dt,b);G.t+=dt;// Dégâts lorsque le joueur marche dans la lave
+
+function update(dt){
+let p=G.p,b=blocks(),s=stats(),j=G.joy;
+
+let terrain=terrainAt(p);
+let terrainSpeed=terrain==='lake'?.58:
+                 terrain==='poison'?.48:
+                 terrain==='oasis'?.85:1;
+
+if(j&&j.mag>8){
+    move(
+        p,
+        j.dx/j.mag*s.speed*terrainSpeed*dt,
+        j.dy/j.mag*s.speed*terrainSpeed*dt,
+        b
+    );
+}
+
+G.t+=dt;
+
+// Lave
+G.lavaT=Math.max(0,(G.lavaT||0)-dt);
+
+if(isOnLava(p)&&G.lavaT<=0){
+    let dmg=Math.max(1,Math.round(12*(1-s.armor)));
+    p.hp-=dmg;
+    G.damageTaken+=dmg;
+    G.lavaT=.65;
+
+    floatText(p.x,p.y-30,'-'+dmg+' PV','#ff6238',15);
+    particle(p.x,p.y,'#ff572d',8,90);
+
+    if(p.hp<=0)return end();
+}
+
+// Poison : dégâts réguliers
+G.poisonT=Math.max(0,(G.poisonT||0)-dt);
+
+if(terrain==='poison'&&G.poisonT<=0){
+    let dmg=Math.max(1,Math.round(4*(1-s.armor)));
+
+    p.hp-=dmg;
+    G.damageTaken+=dmg;
+    G.poisonT=1.2;
+
+    floatText(p.x,p.y-30,'-'+dmg+' PV','#a8df43',14);
+    particle(p.x,p.y,'#a8df43',5,55);
+
+    if(p.hp<=0)return end();
+}
+
+// Oasis : très faible régénération
+G.oasisT=(G.oasisT||0)+dt;
+
+if(terrain==='oasis'&&G.oasisT>=5){
+    G.oasisT=0;
+
+    if(p.hp<p.maxHp){
+        p.hp=Math.min(p.maxHp,p.hp+1);
+        floatText(p.x,p.y-30,'+1 PV','#65edb1',13);
+        particle(p.x,p.y,'#65edb1',3,35);
+    }
+}else if(terrain!=='oasis'){
+    G.oasisT=0;
+}
+G.t+=dt;// Dégâts lorsque le joueur marche dans la lave
 G.lavaT = Math.max(0, (G.lavaT || 0) - dt);
 
 if (isOnLava(p) && G.lavaT <= 0) {
@@ -1039,7 +1316,30 @@ updateHUD()}
 function contact(e,dmg){if(dist(e,G.p)<e.r+G.p.r&&G.inv<=0){let received=Math.max(1,Math.round(dmg*(1-stats().armor)));G.p.hp-=received;G.damageTaken+=received;G.inv=.7;if(G.p.hp<=0)end()}}
 function updateHUD(){if(!G)return;$('#hpbar').style.width=G.p.hp/G.p.maxHp*100+'%';$('#hptext').textContent=Math.ceil(G.p.hp)+'/'+G.p.maxHp;$('#xpbar').style.width=G.xp/G.xpNeed*100+'%';$('#xptext').textContent=G.xp+'/'+G.xpNeed;$('#level').textContent=G.level;$('#kills').textContent=G.kills;$('#coins').textContent=G.coinsRun;$('#cores').textContent=G.coresRun;$('#timer').textContent=Math.floor(G.t/60)+':'+String(Math.floor(G.t%60)).padStart(2,'0');let a=G.bosses.find(b=>b.alive&&b.active);$('#bossHud').style.display=a?'block':'none';if(a){$('#bossName').textContent=a.name;$('#bossLife').textContent=Math.ceil(a.hp)+'/'+a.maxHp;$('#bossbar').style.width=a.hp/a.maxHp*100+'%'}$('#notice').textContent=G.carrying?'◆ Noyau transporté — retourne au spawn':'';let mb=$('#merchantBtn'),mt=$('#merchantTimer');mb.disabled=!G.merchantReady;mb.classList.toggle('ready',G.merchantReady);mt.textContent=G.merchantReady?'PRÊT':Math.ceil(G.merchantT)+'s';let cd=Math.max(0,G.swordT),pct=G.swordMax?100*(1-cd/G.swordMax):100,sc=$('#swordCooldown');$('#swordFill').style.height=Math.max(0,Math.min(100,pct))+'%';sc.classList.toggle('ready',cd===0)}
 function edgeArrow(tx,ty,color,label){let sx=tx-G.p.x,sy=ty-G.p.y,top=G.bosses.some(b=>b.active)?150:110;if(Math.abs(sx)<W/2-35&&Math.abs(sy)<H/2-top)return;let a=Math.atan2(sy,sx),cx=W/2,cy=(H+top)/2,rx=W/2-28,ry=(H-top)/2-28,t=Math.min(rx/Math.max(.001,Math.abs(Math.cos(a))),ry/Math.max(.001,Math.abs(Math.sin(a)))),x=cx+Math.cos(a)*t,y=cy+Math.sin(a)*t;X.save();X.translate(x,y);X.rotate(a);X.fillStyle=color;X.beginPath();X.moveTo(10,0);X.lineTo(-7,-7);X.lineTo(-4,0);X.lineTo(-7,7);X.closePath();X.fill();X.rotate(-a);X.font='10px system-ui';X.textAlign='center';X.fillText(label,0,20);X.restore()}
-function hpbar(e){if(e.hitT<=0&&e.shape!==3)return;X.fillStyle='#351018';X.fillRect(e.x-18,e.y-e.r-10,36,5);X.fillStyle='#ef4f5c';X.fillRect(e.x-18,e.y-e.r-10,36*Math.max(0,e.hp/e.maxHp),5)}function enemyShape(e){X.save();X.translate(e.x,e.y);let sq=e.squash>0?1.22:1;X.scale(sq,2-sq);if((e.kind==='shooter'||e.kind==='spear')&&e.atk<.55){X.strokeStyle=e.kind==='spear'?'#ffab47':'#79bfff';X.globalAlpha=.35+.5*(.55-e.atk)/.55;X.beginPath();X.moveTo(0,0);let a=Math.atan2(G.p.y-e.y,G.p.x-e.x);X.lineTo(Math.cos(a)*240,Math.sin(a)*240);X.stroke();X.globalAlpha=1}X.fillStyle=e.flash>0?'#ffffff':e.burn>0?'#ff9d3d':e.color;X.beginPath();if(e.shape===1)X.rect(-e.r,-e.r,e.r*2,e.r*2);else if(e.shape===2){X.moveTo(0,-e.r);X.lineTo(e.r,e.r);X.lineTo(-e.r,e.r);X.closePath()}else if(e.shape===3){for(let i=0;i<6;i++){let a=i*Math.PI/3;X[i?'lineTo':'moveTo'](Math.cos(a)*e.r,Math.sin(a)*e.r)}X.closePath()}else X.arc(0,0,e.r,0,7);X.fill();X.restore();hpbar(e)}
+function hpbar(e){if(e.hitT<=0&&e.shape!==3)return;X.fillStyle='#351018';X.fillRect(e.x-18,e.y-e.r-10,36,5);X.fillStyle='#ef4f5c';X.fillRect(e.x-18,e.y-e.r-10,36*Math.max(0,e.hp/e.maxHp),5)}
+function enemyShape(e){X.save();X.translate(e.x,e.y);let sq=e.squash>0?1.22:1;X.scale(sq,2-sq);if((e.kind==='shooter'||e.kind==='spear')&&e.atk<.55){X.strokeStyle=e.kind==='spear'?'#ffab47':'#79bfff';X.globalAlpha=.35+.5*(.55-e.atk)/.55;X.beginPath();X.moveTo(0,0);let a=Math.atan2(G.p.y-e.y,G.p.x-e.x);X.lineTo(Math.cos(a)*240,Math.sin(a)*240);X.stroke();X.globalAlpha=1}X.fillStyle=e.flash>0?'#ffffff':e.burn>0?'#ff9d3d':e.color;X.beginPath();if(e.shape===1)X.rect(-e.r,-e.r,e.r*2,e.r*2);else if(e.shape===2){X.moveTo(0,-e.r);X.lineTo(e.r,e.r);X.lineTo(-e.r,e.r);X.closePath()}else if(e.shape===3){for(let i=0;i<6;i++){let a=i*Math.PI/3;X[i?'lineTo':'moveTo'](Math.cos(a)*e.r,Math.sin(a)*e.r)}X.closePath()}else X.arc(0,0,e.r,0,7);X.fill();if(e.kind==='shade'){
+    // Aura sombre
+    X.shadowColor='#a00035';
+    X.shadowBlur=17;
+
+    X.strokeStyle='#53102b';
+    X.lineWidth=3;
+    X.beginPath();
+    X.arc(0,0,e.r+4,0,Math.PI*2);
+    X.stroke();
+
+    // Yeux rouges
+    X.shadowColor='#ff174f';
+    X.shadowBlur=10;
+    X.fillStyle='#ff174f';
+
+    X.beginPath();
+    X.arc(-6,-3,3,0,Math.PI*2);
+    X.arc(6,-3,3,0,Math.PI*2);
+    X.fill();
+
+    X.shadowBlur=0;
+}X.restore();hpbar(e)}
 function draw(){X.clearRect(0,0,W,H);let p=G.p,sx=SETTINGS.shake&&G.shake?rnd(-G.shake,G.shake):0,sy=SETTINGS.shake&&G.shake?rnd(-G.shake,G.shake):0,ox=W/2-p.x+sx,oy=H/2-p.y+sy;X.save();X.translate(ox,oy);// Limites du monde
 // Fond selon le biome
 drawBiomeGround(p);
@@ -1053,6 +1353,7 @@ X.shadowBlur = 18;
 X.strokeRect(-MAP_HALF, -MAP_HALF, MAP_SIZE, MAP_SIZE);
 X.restore();// Lave et décors du biome
 drawLava(p);
+drawWater(p);
 drawDecorations(p);
 X.strokeStyle='#48e7ff';
                 X.lineWidth=4;X.beginPath();X.arc(0,0,38,0,7);X.stroke();
