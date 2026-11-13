@@ -541,66 +541,102 @@ function ensureOasisFeatures(p) {
     for (let bx = cx - 2; bx <= cx + 2; bx++) {
         for (let by = cy - 2; by <= cy + 2; by++) {
             for (let l of waterData(bx, by)) {
-                if (l.type !== 'oasis') continue;
-
-                if (dist(p, l) > 950) continue;
+                if (l.type !== 'oasis' || dist(p, l) > 950) continue;
 
                 const key = bx + ',' + by;
+                let oasis = G.oasisSpawned[key];
 
-                if (G.oasisSpawned[key]) continue;
+                // Première découverte : création définitive des deux gardiens
+                if (!oasis) {
+                    oasis = G.oasisSpawned[key] = {
+                        healTimer: 120,
+                        healWave: 0
+                    };
 
-                G.oasisSpawned[key] = true;
+                    let base = Math.atan2(p.y - l.y, p.x - l.x);
 
-                // Deux gardiens placés devant l'oasis
-                let base = Math.atan2(p.y - l.y, p.x - l.x);
+                    for (let i = 0; i < 2; i++) {
+                        let angle = base + (i === 0 ? -0.62 : 0.62);
+                        let x = l.x + Math.cos(angle) * (l.rx + 38);
+                        let y = l.y + Math.sin(angle) * (l.ry + 38);
 
-                for (let i = 0; i < 2; i++) {
-                    let angle = base + (i === 0 ? -0.62 : 0.62);
+                        G.en.push({
+                            kind: 'shade',
+                            shape: 0,
+                            color: '#090b10',
+                            x, y,
+                            homeX: x,
+                            homeY: y,
+                            oasisX: l.x,
+                            oasisY: l.y,
+                            oasisKey: key,
+                            leash: 390,
+                            aggroRange: 300,
+                            returnRange: 520,
+                            hp: 18,
+                            maxHp: 18,
+                            xp: 12,
+                            speed: 88,
+                            dmg: 16,
+                            r: 17,
+                            coins: 4,
+                            attack: 0,
+                            hitT: 0,
+                            armor: 0,
+                            atk: rnd(1, 2.5),
+                            tele: 0,
+                            target: null
+                        });
+                    }
 
-                    let x = l.x + Math.cos(angle) * (l.rx + 38);
-                    let y = l.y + Math.sin(angle) * (l.ry + 38);
-
-                    G.en.push({
-                        kind: 'shade',
-                        shape: 0,
-                        color: '#090b10',
-                        x, y,
-                        hp: 18,
-                        maxHp: 18,
-                        xp: 12,
-                        speed: 88,
-                        dmg: 16,
-                        r: 17,
-                        coins: 4,
-                        attack: 0,
-                        hitT: 0,
-                        armor: 0,
-                        atk: rnd(1, 2.5),
-                        tele: 0,
-                        target: null
-                    });
-                }
-
-                // Trois soins flottants dans l'oasis
-                for (let i = 0; i < 3; i++) {
-                    let phase = i * Math.PI * 2 / 3;
-
-                    G.drops.push({
-                        x: l.x,
-                        y: l.y,
-                        r: 10,
-                        type: 'heal',
-                        v: 20,
-                        age: 0,
-                        orbit: {
+                    // Trois soins disponibles dès la découverte
+                    for (let i = 0; i < 3; i++) {
+                        G.drops.push({
                             x: l.x,
                             y: l.y,
-                            rx: l.rx * 0.38,
-                            ry: l.ry * 0.38,
-                            phase,
-                            speed: 0.8
+                            r: 10,
+                            type: 'heal',
+                            v: 20,
+                            age: 0,
+                            oasisKey: key,
+                            orbit: {
+                                x: l.x,
+                                y: l.y,
+                                rx: l.rx * 0.38,
+                                ry: l.ry * 0.38,
+                                phase: i * Math.PI * 2 / 3,
+                                speed: 0.8
+                            }
+                        });
+                    }
+                } else {
+                    // Les soins reviennent par vagues de trois, toutes les 120 secondes
+                    oasis.healTimer -= (G.dt || 0);
+                    const remaining = G.drops.some(d => d.type === 'heal' && d.oasisKey === key);
+                    if (oasis.healTimer <= 0 && !remaining) {
+                        oasis.healTimer = 120;
+                        oasis.healWave++;
+
+                        for (let i = 0; i < 3; i++) {
+                            G.drops.push({
+                                x: l.x,
+                                y: l.y,
+                                r: 10,
+                                type: 'heal',
+                                v: 20,
+                                age: 0,
+                                oasisKey: key,
+                                orbit: {
+                                    x: l.x,
+                                    y: l.y,
+                                    rx: l.rx * 0.38,
+                                    ry: l.ry * 0.38,
+                                    phase: i * Math.PI * 2 / 3 + oasis.healWave * 0.4,
+                                    speed: 0.8
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             }
         }
@@ -1286,6 +1322,7 @@ if(j&&j.mag>8){
 }
 
 G.t+=dt;
+G.dt=dt;
 ensureOasisFeatures(p);
 // Lave
 G.lavaT=Math.max(0,(G.lavaT||0)-dt);
@@ -1356,7 +1393,30 @@ if(G.bossTimer<=0){
 }G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate];G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}G.shot-=dt;if(G.shot<=0){
     fire();
     G.shot=s.rate*(G.weapon==='smg'?.60:1);
-}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
+}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shade'){
+    const playerDistance = dist(e, p);
+    const homeDistance = Math.hypot(e.x - e.homeX, e.y - e.homeY);
+    const oasisDistance = Math.hypot(p.x - e.oasisX, p.y - e.oasisY);
+
+    // Le gardien ne poursuit que si le joueur approche de son oasis
+    // et reste dans le périmètre défendu.
+    const canChase = oasisDistance <= e.returnRange &&
+                     playerDistance <= e.aggroRange &&
+                     homeDistance < e.leash;
+
+    if(canChase){
+        const d = playerDistance || 1;
+        move(e, (p.x-e.x)/d*e.speed*dt, (p.y-e.y)/d*e.speed*dt, b);
+        contact(e, e.dmg);
+    } else {
+        // Retour vers sa position de garde, sans poursuivre le joueur.
+        if(homeDistance > 5){
+            const d = homeDistance || 1;
+            const speed = e.speed * (homeDistance > 90 ? 1.25 : 0.75);
+            move(e, (e.homeX-e.x)/d*speed*dt, (e.homeY-e.y)/d*speed*dt, b);
+        }
+    }
+}else if(e.kind==='shooter'||e.kind==='spear'||e.kind==='bomber')rangedEnemy(e,dt);else{
 
     let d=dist(e,p)||1;
 
@@ -1421,7 +1481,7 @@ for(let q of G.bosses.filter(x=>x.alive)){
     }else{
         kill(e);
     }
-}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&dist(e,p)<1500);G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}// Déplacement des soins dans les oasis
+}if(q.hits<=0)q.travel=9999}}for(let e of G.en){if(e.burn>0){e.burn-=dt;e.burnTick=(e.burnTick||0)+dt;if(e.burnTick>=1){e.burnTick=0;e.hp-=1;if(e.hp<=0)kill(e)}}}G.en=G.en.filter(e=>e.hp>0&&(e.kind==='shade'||dist(e,p)<1500));G.bul=G.bul.filter(q=>q.travel<s.range);for(let q of G.enemyBul){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(b.some(o=>hit(q,o)))q.life=0;if(dist(q,p)<q.r+p.r&&G.inv<=0){p.hp-=Math.max(1,Math.round(q.dmg*(1-s.armor)));G.inv=.7;q.life=0;if(p.hp<=0)return end()}}G.enemyBul=G.enemyBul.filter(q=>q.life>0);for(let q of G.bombs){q.t-=dt;if(q.t<=0&&!q.boom){q.boom=.22;let d=dist(q,p);if(d<q.r&&G.inv<=0){p.hp-=Math.round((d<q.r*.45?25:12)*(1-s.armor));G.inv=.7;if(p.hp<=0)return end()}for(let e of G.en)if(dist(q,e)<q.r)e.hp-=1}if(q.boom)q.boom-=dt}G.bombs=G.bombs.filter(q=>q.t>0||q.boom>0);for(let q of G.slashes)q.life-=dt;G.slashes=G.slashes.filter(q=>q.life>0);for(let d of G.drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt)}// Déplacement des soins dans les oasis
 for(let d of G.drops){
     if(!d.orbit) continue;
 
