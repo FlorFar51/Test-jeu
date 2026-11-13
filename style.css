@@ -59,3 +59,8 @@ html, body {
 #devXpBtn.devTiny{display:block;width:auto;min-height:0;margin:5px auto 0;padding:2px 6px;border:0;background:transparent;color:#63758b;font-size:9px;font-weight:500;opacity:.38;box-shadow:none;letter-spacing:.2px}
 #devXpBtn.devTiny:active{opacity:1;color:#9edcff}
 .maxUpgradeNote{margin:8px 4px;padding:12px;border:1px solid #c58cff55;border-radius:10px;background:#251b36;color:#e6d6ff;font-size:13px;line-height:1.45;text-align:center}
+
+/* v22 : level-up modal must sit above pause */
+#pause{z-index:10}
+#levelup{z-index:12}
+#devXpBtn.devTiny{font-size:9px;letter-spacing:.25px;opacity:.32;padding:2px 7px}
