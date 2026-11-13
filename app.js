@@ -873,7 +873,7 @@ function spawnEnemy(){
 
     const free=findFreePosition(x,y,18,blocks());x=free.x;y=free.y;
     let e = enemyType();
-    const elite=Math.random()<.05;
+    const elite=Math.random()<.015;
 
     if(elite){
         e.hp*=3;
@@ -1123,7 +1123,7 @@ function openMerchant(){
  if(!G.merchantReady||G.merchantOpen||G.paused)return;
  G.paused=true;G.merchantOpen=true;joyEnd();cancelAnimationFrame(raf);
  let box=$('#shop');box.innerHTML='';let items=[];
- if(!G.gun)items.push({name:'Pistolet',desc:'Débloque le tir automatique à distance.',cost:80,gun:true,icon:'🔫',color:'#ffd45f'});
+ if(!G.gun)items.push({name:'Pistolet',desc:'Débloque le tir automatique à distance.',cost:60,gun:true,icon:'🔫',color:'#ffd45f'});
  if(G.gun&&!G.smg)items.push({name:'Mitraillette',desc:'Transforme le pistolet : cadence et dégâts améliorés.',cost:300,smg:true,icon:'🔫',color:'#ff785e'});
  else if(G.smg&&(G.smgLevel||1)<3){let lvl=G.smgLevel||1,cost=[0,450,650,900][lvl];items.push({name:'Mitraillette niveau '+(lvl+1),desc:'Augmente encore la cadence et les dégâts.',cost,smgUpgrade:true,icon:'⚡',color:'#ff785e'});}
  items.push({name:'Soin complet',desc:'Restaure tous les PV. Achat illimité.',cost:45,heal:true,icon:'✚',color:'#62e795'});
@@ -1370,7 +1370,7 @@ if(G.bossTimer<=0){
 }G.shake=Math.max(0,G.shake-dt*14);G.levelFlash=Math.max(0,G.levelFlash-dt);for(let z of G.particles){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.94;z.vy*=.94;z.life-=dt}G.particles=G.particles.filter(z=>z.life>0);for(let z of G.texts){z.y-=24*dt;z.life-=dt}G.texts=G.texts.filter(z=>z.life>0);for(let z of G.waves){z.r+=150*dt;z.life-=dt}G.waves=G.waves.filter(z=>z.life>0);if(!G.merchantReady){G.merchantT-=dt;if(G.merchantT<=0){G.merchantT=0;G.merchantReady=true;notify('Marchand disponible','shop')}}if(G.swordT>0)G.swordT=Math.max(0,G.swordT-dt);if(G.swordT===0&&swordAttack()){G.swordMax=[1.25,1.10,.95,.80][G.up.sRate]*(G.legendary?.overdrive?.8:1);G.swordT=G.swordMax}G.inv=Math.max(0,G.inv-dt);if(s.regen){G.regenT+=dt;if(G.regenT>=s.regen){G.regenT=0;p.hp=Math.min(p.maxHp,p.hp+1)}}if(G.legendary?.divineRegen){G.divineT=(G.divineT||0)+dt;if(G.divineT>=1){G.divineT-=1;p.hp=Math.min(p.maxHp,p.hp+Math.max(1,p.maxHp*.01))}}if(G.legendary?.storm){G.stormT=(G.stormT||0)+dt;if(G.stormT>=1){G.stormT-=1;let target=[...G.en,...G.bosses.filter(z=>z.alive)].filter(e=>dist(e,p)<230).sort((a,b)=>dist(a,p)-dist(b,p))[0];if(target){let dmg=3*stats().damage;target.hp-=dmg;G.damageDone+=dmg;impact(target,dmg,'#f4d35e');particle(target.x,target.y,'#f4d35e',8,100);if(target.hp<=0){let boss=G.bosses.includes(target);if(boss)target.alive=false;kill(target,boss)}}}}G.shot-=dt;if(G.shot<=0){
     fire();
     G.shot=s.rate*(G.weapon==='smg'?[.60,.52,.45,.38][G.smgLevel||1]:1);
-}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shade'){
+}G.spawn-=dt;if(G.spawn<=0&&G.en.length<CFG.maxEnemies){spawnEnemy();G.spawn=Math.max(CFG.minSpawnInterval,CFG.spawnRate-G.t/CFG.spawnRamp)}for(let e of G.en){e.repositionT=Math.max(0,(e.repositionT||0)-dt);e.hitT=Math.max(0,e.hitT-dt);e.flash=Math.max(0,(e.flash||0)-dt);e.squash=Math.max(0,(e.squash||0)-dt);if(e.kind==='shade'){
     const free=findFreePosition(e.x,e.y,e.r,b);e.x=free.x;e.y=free.y;
     const playerDistance = dist(e, p);
     const homeDistance = Math.hypot(e.x - e.homeX, e.y - e.homeY);
@@ -1437,6 +1437,27 @@ if(G.bossTimer<=0){
     );
     contact(e,e.dmg);
 }
+}
+// Quand une horde devient trop importante, les poursuivants hors écran
+// réapparaissent de l'autre côté du joueur, toujours hors du champ de vision.
+const followers=G.en.filter(e=>e.kind!=='shade'&&e.kind!=='shooter'&&e.kind!=='spear'&&e.kind!=='bomber');
+if(followers.length>=20){
+ const halfW=W/2,halfH=H/2,outer=Math.hypot(halfW,halfH)+Math.max(70,Math.min(W,H)*.12);
+ for(const e of followers){
+  if(e.repositionT>0)continue;
+  const dx=e.x-p.x,dy=e.y-p.y;
+  if(Math.abs(dx)<=halfW+e.r+12&&Math.abs(dy)<=halfH+e.r+12)continue;
+  const oldAngle=Math.atan2(dy,dx),base=oldAngle+Math.PI;
+  let placed=null;
+  for(let attempt=0;attempt<10;attempt++){
+   const angle=base+(Math.random()-.5)*1.1,radius=outer+Math.random()*90;
+   const tx=clamp(p.x+Math.cos(angle)*radius,-MAP_HALF+45,MAP_HALF-45);
+   const ty=clamp(p.y+Math.sin(angle)*radius,-MAP_HALF+45,MAP_HALF-45);
+   const candidate=findFreePosition(tx,ty,e.r,b);
+   if(Math.abs(candidate.x-p.x)>halfW+e.r+20||Math.abs(candidate.y-p.y)>halfH+e.r+20){placed=candidate;break;}
+  }
+  if(placed){e.x=placed.x;e.y=placed.y;e.repositionT=3.5;}
+ }
 }
 separateEnemies(b);
 
